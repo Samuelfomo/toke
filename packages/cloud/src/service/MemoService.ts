@@ -51,10 +51,48 @@ export interface MemoRealtimeTicket {
     realtime_ticket: string;
     expires_at: string;
 }
+export interface MemoCapabilities {
+    comment?: boolean;
+    edit?: boolean;
+    submit?: boolean;
+    validate?: boolean;
+    reject?: boolean;
+    revoke?: boolean;
+}
+export type MemoCommand =
+    | { action: 'CREATE'; targetGuid: string; type: string; title: string; text: string }
+    | ({ guid: string; version: string | null } & (
+        { action: 'EDIT'; title: string; text: string } |
+        { action: 'REPLY'; text: string } |
+        { action: 'SUBMIT' | 'APPROVE' | 'REJECT' | 'REVOKE' }
+    ));
+
+export interface MemoRecipient {
+    guid: string;
+    first_name?: string;
+    last_name?: string;
+}
 
 const MAX_FILES = 8;
 
 export default class MemoService {
+    static async recipients(): Promise<MemoRecipient[]> {
+        const response = await apiRequest<ApiResponse<{ recipients: MemoRecipient[] }>>({
+            path: `${baseUrl}/recipients`, method: 'GET',
+        });
+        if (!response.success || !Array.isArray(response.data?.recipients))
+            throw new Error('Réponse inattendue lors du chargement des destinataires.');
+        return response.data.recipients;
+    }
+
+    static async command(command: MemoCommand, commandId: string): Promise<{ guid: string; version: string }> {
+        const response = await apiRequest<ApiResponse<{ guid: string; version: string }>>({
+            path: `${baseUrl}/commands`, method: 'POST', data: { ...command, commandId },
+        });
+        if (!response.success || !response.data?.guid || !response.data.version)
+            throw new Error('Confirmation du serveur indisponible.');
+        return response.data;
+    }
     static async loadFiles(url: string): Promise<Blob> {
         const normalizedUrl = url?.trim();
         if (!normalizedUrl) {
@@ -206,11 +244,21 @@ export default class MemoService {
         return response;
     }
 
-    static async markAsRead(memoGuid: string, userGuid: string): Promise<ApiResponse> {
+    static async markAsRead(memoGuid: string, seenAt: string): Promise<ApiResponse<{ readAt: string }>> {
         return await apiRequest<ApiResponse>({
             path: `${baseUrl}/${encodeURIComponent(memoGuid)}/read`,
-            method: 'PATCH', data: { user_guid: userGuid },
+            method: 'PATCH', data: { seen_at: seenAt },
         });
+    }
+
+    static async readState(): Promise<{ revision: string; unreadTotal: number }> {
+        const response = await apiRequest<ApiResponse<{ revision: string; unreadTotal: number }>>({
+            path: `${baseUrl}/state`, method: 'GET',
+        });
+        if (!response.success || typeof response.data?.revision !== 'string' ||
+            !Number.isSafeInteger(response.data.unreadTotal) || response.data.unreadTotal < 0)
+            throw new Error('État de lecture des mémos indisponible.');
+        return response.data;
     }
 
     static async getMemoByGuid(guid: string): Promise<ApiResponse> {
@@ -228,13 +276,12 @@ export default class MemoService {
 
     /**
      * Ticket BFF court pour ouvrir le namespace /memo-realtime.
-     * Le ticket Socket.IO de l'API tenant n'est jamais exposé au navigateur.
+     * Identité dérivée exclusivement de la session REST.
      */
-    static async createRealtimeTicket(userGuid: string): Promise<MemoRealtimeTicket> {
+    static async createRealtimeTicket(): Promise<MemoRealtimeTicket> {
         const response = await apiRequest<ApiResponse>({
             path: `${baseUrl}/realtime-ticket`,
             method: 'POST',
-            data: { user_guid: userGuid },
         });
 
         if (!response?.success) {

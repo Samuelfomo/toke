@@ -12,16 +12,21 @@ export function sessionFailure(res: Response, error: unknown): void {
 // Deliberately verifies even a root client: ServerAuth's root shortcut is not authority here.
 export async function authenticateSessionService(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    const deny = (reason: string): never => {
+      console.warn('[user-session] Technical introspection rejected', { reason });
+      throw new SessionError(401, 'session_service_unauthorized');
+    };
     const allowed = (process.env.USER_SESSION_SERVICE_KEYS || '').split(',').map(s => s.trim()).filter(Boolean);
     if (!allowed.length) throw new SessionError(503, 'session_service_configuration_missing');
     const key = req.header('x-api-key') || '';
     const timestamp = req.header('x-api-timestamp') || '';
     const signature = req.header('x-api-signature') || '';
-    if (!allowed.includes(key) || !/^\d+$/.test(timestamp) || Math.abs(Date.now() / 1000 - Number(timestamp)) > 60)
-      throw new SessionError(401, 'session_service_unauthorized');
+    if (!allowed.includes(key)) deny('key_not_allowlisted');
+    if (!/^\d+$/.test(timestamp) || Math.abs(Date.now() / 1000 - Number(timestamp)) > 60)
+      deny('timestamp_invalid');
     const client = await ClientCacheService.getClientConfig(key);
-    if (!client?.active || !ApiKeyManager.verify(signature, key, timestamp, client.secret))
-      throw new SessionError(401, 'session_service_unauthorized');
+    if (!client?.active) return deny('client_not_active_or_registered');
+    if (!ApiKeyManager.verify(signature, key, timestamp, client.secret)) deny('signature_invalid');
     next();
   } catch (error) { sessionFailure(res, error); }
 }

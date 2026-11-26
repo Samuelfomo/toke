@@ -6,7 +6,7 @@ import {
   ScheduleAssignmentsValidationUtils,
   TimezoneConfigUtils,
 } from '@toke/shared';
-import { Op } from 'sequelize';
+import { Op, type Transaction } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -45,7 +45,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   protected continuation_of_guid?: string | null;
   protected version?: number;
   protected start_date?: string;
-  protected end_date?: string;
+  protected end_date?: string | null;
   protected created_by?: number | null;
   protected reason?: string | null;
   protected active?: boolean;
@@ -265,8 +265,8 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   // CRUD
   // ============================================
 
-  protected async create(): Promise<void> {
-    await this.validate();
+  protected async create(transaction?: Transaction): Promise<void> {
+    await this.validate({ transaction });
 
     const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
@@ -298,8 +298,6 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     // Version initiale = 1
     this.version = this.initialVersion;
 
-    console.log('this.session_template', this.session_template);
-
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
@@ -313,7 +311,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
       [this.db.created_by]: this.created_by ?? null,
       [this.db.reason]: this.reason ?? null,
       [this.db.active]: this.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE,
-    });
+    }, { transaction });
 
     if (!lastID) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.CREATION_FAILED);
@@ -441,7 +439,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   // VALIDATION
   // ============================================
 
-  private async validate(): Promise<void> {
+  private async validate(clockOptions: ClockInOptions = {}): Promise<void> {
     if (!this.family || !this.related) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.FAMILY_REQUIRED);
     }
@@ -492,7 +490,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
       ) {
         throw new Error('Invalid continuous guard assignment');
       }
-      const parent = await this.findByGuid(this.continuation_of_guid);
+      const parent = await this.findByGuid(this.continuation_of_guid, false, clockOptions);
       if (
         !parent ||
         !parent.active ||

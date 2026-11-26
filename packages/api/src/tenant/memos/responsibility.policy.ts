@@ -5,6 +5,8 @@ import { assertTransaction } from '../database/tenant.ownership.js';
 export interface MemoPerson {
   id: number;
   guid: string;
+  first_name?: string;
+  last_name?: string;
   tenant: string;
   active: boolean;
   deleted_at: unknown;
@@ -209,7 +211,7 @@ export async function loadMemoOrganization(
       "SELECT to_char(transaction_timestamp() AT TIME ZONE 'Africa/Douala','YYYY-MM-DD') AS day, transaction_timestamp()::text AS now",
     )
   )[0];
-  const people = await query<MemoPerson>(`SELECT u.id,u.guid,u.tenant,u.active,u.deleted_at,
+  const people = await query<MemoPerson>(`SELECT u.id,u.guid,u.tenant,u.active,u.deleted_at,u.first_name,u.last_name,
     ARRAY(SELECT r.code FROM public.xa_user_roles ur JOIN public.xa_roles r ON r.id=ur.role WHERE ur."user"=u.id) AS roles
     FROM public.xa_users u ORDER BY u.id LIMIT 20001`);
   const links = await query<DirectLink>(

@@ -703,6 +703,7 @@ export async function solveConfiguredSuggestion(
     periodFrom: horizon.solveFrom,
     periodTo: horizon.solveTo,
     lockedAssignments,
+    configGuid: config.getGuid()!,
   };
   const preflight = validatePlanningPreflight({
     ...preflightInput,
@@ -863,6 +864,16 @@ export async function solveConfiguredSuggestion(
     metadata: PlanningSolverExecutionMetadata;
     boundaryRelaxed: boolean;
   }> => {
+    const windowPreflight = validatePlanningPreflight({
+      ...input,
+      configGuid: config.getGuid()!,
+    }, { workCapacityOnly: true });
+    if (!windowPreflight.valid) {
+      throw new SuggestionGenerationError(
+        'La capacité des services ne permet pas de respecter le travail obligatoire.',
+        'PLANNING_PREFLIGHT_INFEASIBLE', 422, windowPreflight,
+      );
+    }
     try {
       const execution = await PlanningSolverFactory.solve(input, baseSolveOptions);
       return { result: execution.result, metadata: execution.metadata, boundaryRelaxed: false };

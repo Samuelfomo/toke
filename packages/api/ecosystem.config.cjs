@@ -80,6 +80,8 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 4892,
+        MEMO_B1_MANAGER_WRITES: process.env.MEMO_B1_MANAGER_WRITES ?? '0',
+        MEMO_B2_PRODUCTION_MANAGER_READS: process.env.MEMO_B2_PRODUCTION_MANAGER_READS ?? '1',
         LOG_LEVEL: 'info',
         LOG_FILE: './logs/tenant-app.log',
         API_TYPE: 'tenant',

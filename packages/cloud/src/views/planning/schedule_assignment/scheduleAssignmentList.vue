@@ -463,9 +463,21 @@ monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
 const sunday = new Date(monday)
 sunday.setDate(monday.getDate() + 6)
 
+function isPlanningDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(value)
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
+const routePeriod = computed(() => {
+  const from = getQueryString(route.query.date_from)
+  const to = getQueryString(route.query.date_to)
+  return isPlanningDate(from) && isPlanningDate(to) && from <= to ? {from, to} : null
+})
+
 // Période appliquée : seule source utilisée par la grille et les appels API.
-const periodFrom = ref(monday.toISOString().split('T')[0])
-const periodTo = ref(sunday.toISOString().split('T')[0])
+const periodFrom = ref(routePeriod.value?.from ?? monday.toISOString().split('T')[0])
+const periodTo = ref(routePeriod.value?.to ?? sunday.toISOString().split('T')[0])
 const previousIso = computed(() => previousPlanningDate(periodFrom.value))
 
 // Période en cours de saisie : modifier ces valeurs ne déclenche aucun appel API.
@@ -1306,8 +1318,15 @@ function openPlanningSuggestionModule(): void {
   router.push({name: 'planning-suggestion-dashboard'})
 }
 
+watch(routePeriod, period => {
+  if (!period) return
+  draftPeriodFrom.value = periodFrom.value = period.from
+  draftPeriodTo.value = periodTo.value = period.to
+  void load()
+})
+
 onMounted(() => {
-  load()
+  void load()
 })
 </script>
 <style scoped>

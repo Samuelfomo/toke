@@ -158,11 +158,12 @@ export class ScheduleAssignmentService {
     });
   }
 
-  static async saveScheduleAssignment(reference: string, payload: any): Promise<ServiceResult> {
+  static async saveScheduleAssignment(reference: string, payload: any, headers?: Record<string, string>): Promise<ServiceResult> {
     return this.request(reference, {
       method: 'POST',
       url: baseUrl,
       data: payload,
+      headers,
     });
   }
 
@@ -208,6 +209,7 @@ export class ScheduleAssignmentService {
       url: string;
       params?: any;
       data?: any;
+      headers?: Record<string, string>;
     },
   ): Promise<ServiceResult> {
     try {
@@ -225,7 +227,7 @@ export class ScheduleAssignmentService {
       if (error.response) {
         return {
           status: error.response.status,
-          response: error.response.data,
+          response: error.response.data?.error ?? error.response.data,
         };
       }
 

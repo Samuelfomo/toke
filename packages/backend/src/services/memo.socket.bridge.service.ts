@@ -1,291 +1,104 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import type { Namespace, Server, Socket } from 'socket.io';
 
-import type { Server as IOServer, Socket } from 'socket.io';
-import { io as createSocketClient, type Socket as ClientSocket } from 'socket.io-client';
-
-import { getTenantApiBaseUrl } from '../tools/api.factory.js';
-import { UserService } from './user.service.js';
-
-export type MemoRealtimeAction =
-  | 'created'
-  | 'updated'
-  | 'responded'
-  | 'validated'
-  | 'rejected'
-  | 'revoked'
-  | 'deleted'
-  | 'escalated';
-
-export interface MemoRealtimePayload {
-  guid: string;
-  action: MemoRealtimeAction;
-  affectedUserGuids: string[];
-  actorUserGuid?: string;
-  occurredAt: string;
+interface MemoState {
+  revision: string;
+  unreadTotal: number;
 }
 
-interface BridgeTicketRecord {
-  ticket: string;
-  reference: string;
-  userGuid: string;
-  upstreamTicket: string;
-  upstreamExpiresAt: number;
+interface Ticket {
+  readState: () => Promise<MemoState>;
   expiresAt: number;
 }
 
-interface UpstreamTicket {
-  realtime_ticket: string;
-  expires_at: string;
+const TICKET_TTL = 30_000;
+const LEASE_TTL = 5 * 60_000;
+const INTERVAL = 6_000;
+const MAX_TICKETS = 2048;
+
+function validateState(state: MemoState): MemoState {
+  if (typeof state?.revision !== 'string' || state.revision.length > 100 ||
+      !Number.isSafeInteger(state.unreadTotal) || state.unreadTotal < 0)
+    throw new Error('memo_realtime_invalid_state');
+  return { revision: state.revision, unreadTotal: state.unreadTotal };
 }
 
-/**
- * Bridge temps réel :
- *
- * navigateur <-> BFF Socket.IO <-> API tenant Socket.IO
- *
- * Le navigateur ne connaît jamais l'URL Socket.IO de l'API tenant ni son ticket.
- */
+/** Browser namespace. Each subscription reuses the issuing request's verified
+ * proof and gets its own ACL-scoped snapshot from the Tenant API. */
 export class MemoSocketBridgeService {
-  private static io: IOServer | null = null;
-  private static tickets = new Map<string, BridgeTicketRecord>();
-  private static upstreamSockets = new Set<ClientSocket>();
+  private static namespace: Namespace | null = null;
+  private static tickets = new Map<string, Ticket>();
 
-  private static readonly BRIDGE_TICKET_TTL_MS = 30 * 60 * 1000;
-  private static readonly NAMESPACE = '/memo-realtime';
+  static init(io: Server): void {
+    this.namespace = io.of('/memo-realtime');
+    this.namespace.use((socket, next) => {
+      const value = socket.handshake.auth?.realtimeTicket;
+      const ticket = typeof value === 'string' ? this.tickets.get(value) : undefined;
+      if (!ticket || ticket.expiresAt <= Date.now()) return next(new Error('memo_bridge_ticket_invalid'));
+      this.tickets.delete(value);
+      socket.data.memoTicket = ticket;
+      next();
+    });
+    this.namespace.on('connection', socket => {
+      const ticket = socket.data.memoTicket as Ticket;
+      delete socket.data.memoTicket;
+      this.subscribe(socket, ticket);
+    });
+  }
 
-  static init(io: IOServer): void {
-    this.io = io;
+  static async createBridgeTicket(readState: Ticket['readState']) {
+    if (!this.namespace || this.namespace.sockets.size >= MAX_TICKETS)
+      throw new Error('memo_realtime_unavailable');
+    validateState(await readState());
+    for (const [key, ticket] of this.tickets) {
+      if (ticket.expiresAt <= Date.now()) this.tickets.delete(key);
+    }
+    if (this.tickets.size >= MAX_TICKETS) throw new Error('memo_realtime_unavailable');
+    const value = randomUUID();
+    const expiresAt = Date.now() + TICKET_TTL;
+    this.tickets.set(value, { readState, expiresAt });
+    setTimeout(() => this.tickets.delete(value), TICKET_TTL).unref();
+    return { realtime_ticket: value, expires_at: new Date(expiresAt).toISOString() };
+  }
 
-    const namespace = io.of(this.NAMESPACE);
+  private static subscribe(socket: Socket, ticket: Ticket): void {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let lastRevision: string | undefined;
+    let healthy = false;
+    const lease = setTimeout(() => socket.disconnect(), LEASE_TTL);
+    socket.once('disconnect', () => {
+      clearTimeout(timer);
+      clearTimeout(lease);
+    });
 
-    namespace.use((socket, next) => {
+    const scan = async () => {
       try {
-        const ticketValue = socket.handshake.auth?.realtimeTicket;
-        if (typeof ticketValue !== 'string' || !ticketValue) {
-          return next(new Error('memo_bridge_ticket_required'));
+        const state = validateState(await ticket.readState());
+        if (!socket.connected) return;
+        if (!healthy) socket.emit('memo:bridge-status', { connected: true, reconnected: lastRevision !== undefined });
+        healthy = true;
+        if (state.revision !== lastRevision) {
+          lastRevision = state.revision;
+          socket.emit('memo:changed', state);
         }
-
-        const ticket = this.validateBridgeTicket(ticketValue);
-        if (!ticket) {
-          return next(new Error('memo_bridge_ticket_invalid'));
-        }
-
-        socket.data.memoBridge = ticket;
-        next();
       } catch (error) {
-        console.error('❌ MemoSocketBridge auth error:', error);
-        next(new Error('memo_bridge_auth_failed'));
-      }
-    });
-
-    namespace.on('connection', (socket) => {
-      void this.attachUpstream(socket);
-    });
-
-    console.log(`✅ MemoSocketBridgeService initialisé (${this.NAMESPACE})`);
-  }
-
-  static async createBridgeTicket(
-    reference: string,
-    userGuid: string,
-  ): Promise<{ realtime_ticket: string; expires_at: string }> {
-    this.cleanupExpiredTickets();
-
-    const upstream = await this.requestUpstreamTicket(reference, userGuid);
-    const now = Date.now();
-    const upstreamExpiresAt = Date.parse(upstream.expires_at);
-
-    if (!Number.isFinite(upstreamExpiresAt) || upstreamExpiresAt <= now) {
-      throw new Error('memo_upstream_ticket_expired');
-    }
-
-    const expiresAt = Math.min(
-      upstreamExpiresAt,
-      now + this.BRIDGE_TICKET_TTL_MS,
-    );
-
-    const ticket = randomUUID();
-
-    this.tickets.set(ticket, {
-      ticket,
-      reference,
-      userGuid,
-      upstreamTicket: upstream.realtime_ticket,
-      upstreamExpiresAt,
-      expiresAt,
-    });
-
-    return {
-      realtime_ticket: ticket,
-      expires_at: new Date(expiresAt).toISOString(),
-    };
-  }
-
-  private static validateBridgeTicket(ticket: string): BridgeTicketRecord | null {
-    this.cleanupExpiredTickets();
-
-    const record = this.tickets.get(ticket);
-    if (!record || record.expiresAt <= Date.now()) {
-      if (record) this.tickets.delete(ticket);
-      return null;
-    }
-
-    return record;
-  }
-
-  private static async attachUpstream(frontendSocket: Socket): Promise<void> {
-    const record = frontendSocket.data.memoBridge as BridgeTicketRecord | undefined;
-
-    if (!record) {
-      frontendSocket.disconnect(true);
-      return;
-    }
-
-    try {
-      const apiUrl = await getTenantApiBaseUrl(record.reference);
-      const upstreamPath = process.env.TENANT_SOCKET_PATH || '/socket.io';
-
-      const upstream = createSocketClient(apiUrl, {
-        path: upstreamPath,
-        autoConnect: false,
-        auth: {
-          realtimeTicket: record.upstreamTicket,
-        },
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 10000,
-      });
-
-      this.upstreamSockets.add(upstream);
-
-      let refreshingTicket = false;
-      let hasUpstreamConnectedOnce = false;
-
-      upstream.on('connect', () => {
-        const reconnected = hasUpstreamConnectedOnce;
-        hasUpstreamConnectedOnce = true;
-
-        frontendSocket.emit('memo:bridge-status', {
-          connected: true,
-          reconnected,
-        });
-      });
-
-      upstream.on('memo:changed', (payload: MemoRealtimePayload) => {
-        if (
-          Array.isArray(payload?.affectedUserGuids) &&
-          payload.affectedUserGuids.includes(record.userGuid)
-        ) {
-          frontendSocket.emit('memo:changed', payload);
+        if (!socket.connected) return;
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 403) {
+          socket.disconnect();
+          return;
         }
-      });
-
-      upstream.on('disconnect', (reason) => {
-        frontendSocket.emit('memo:bridge-status', {
-          connected: false,
-          reason,
-        });
-      });
-
-      upstream.on('connect_error', async (error: Error) => {
-        if (error.message === 'realtime_ticket_invalid' && !refreshingTicket) {
-          refreshingTicket = true;
-
-          try {
-            const refreshed = await this.requestUpstreamTicket(
-              record.reference,
-              record.userGuid,
-            );
-
-            record.upstreamTicket = refreshed.realtime_ticket;
-            record.upstreamExpiresAt = Date.parse(refreshed.expires_at);
-            upstream.auth = {
-              realtimeTicket: record.upstreamTicket,
-            };
-
-            upstream.connect();
-            return;
-          } catch (refreshError: any) {
-            console.error('❌ Refresh ticket memo upstream impossible:', refreshError);
-            frontendSocket.emit('memo:bridge-error', {
-              code: 'memo_upstream_ticket_refresh_failed',
-              message: refreshError?.message || 'Unable to refresh realtime ticket',
-            });
-          } finally {
-            refreshingTicket = false;
-          }
-        }
-
-        frontendSocket.emit('memo:bridge-error', {
-          code: error.message || 'memo_upstream_connection_failed',
-          message: error.message || 'Unable to connect to tenant realtime API',
-        });
-      });
-
-      frontendSocket.once('disconnect', () => {
-        upstream.removeAllListeners();
-        upstream.disconnect();
-        this.upstreamSockets.delete(upstream);
-      });
-
-      upstream.connect();
-    } catch (error: any) {
-      console.error('❌ MemoSocketBridge upstream error:', error);
-
-      frontendSocket.emit('memo:bridge-error', {
-        code: 'memo_bridge_upstream_failed',
-        message: error?.message || 'Unable to initialize memo realtime bridge',
-      });
-    }
-  }
-
-  private static async requestUpstreamTicket(
-    reference: string,
-    userGuid: string,
-  ): Promise<UpstreamTicket> {
-    const response = await UserService.createMemoRealtimeTicket(reference, userGuid);
-
-    if (!response || response.status < 200 || response.status >= 300) {
-      const message =
-        response?.data?.error?.message ||
-        response?.data?.message ||
-        'Tenant API refused realtime ticket';
-
-      throw new Error(message);
-    }
-
-    const data = response.data?.data ?? response.data;
-    if (!data?.realtime_ticket || !data?.expires_at) {
-      throw new Error('Invalid realtime ticket response from tenant API');
-    }
-
-    return {
-      realtime_ticket: data.realtime_ticket,
-      expires_at: data.expires_at,
-    };
-  }
-
-  private static cleanupExpiredTickets(): void {
-    const now = Date.now();
-    for (const [ticket, record] of this.tickets.entries()) {
-      if (record.expiresAt <= now) {
-        this.tickets.delete(ticket);
+        if (healthy) socket.emit('memo:bridge-status', { connected: false });
+        healthy = false;
       }
-    }
+      if (socket.connected) timer = setTimeout(() => { void scan(); }, INTERVAL);
+    };
+    void scan();
   }
 
   static shutdown(): void {
-    for (const socket of this.upstreamSockets) {
-      socket.removeAllListeners();
-      socket.disconnect();
-    }
-
-    this.upstreamSockets.clear();
+    this.namespace?.disconnectSockets();
+    this.namespace = null;
     this.tickets.clear();
-    this.io = null;
-
-    console.log('✅ MemoSocketBridgeService arrêté');
   }
 }

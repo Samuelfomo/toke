@@ -1,34 +1,39 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7]">
+  <div class="bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7]">
+    <div class="flex h-dvh flex-col">
     <!--    <div class="top-header">-->
     <Header />
     <!--    </div>-->
 
-    <main class="flex-1 flex overflow-hidden pb-4 max-w-[1600px] mx-auto rounded-md w-full bg-white/70 m-5">
+    <main class="flex min-h-0 flex-1 flex-col overflow-hidden max-w-[1600px] mx-auto rounded-md w-full bg-white/70 lg:flex-row">
 
-      <div :class="['grid grid-cols-1 gap-4 items-start justify-between border-r border-gray-200 pt-4 transition-all duration-300', mode !== 'idle' ? 'hidden md:grid' : '']">
+      <div :class="['min-h-0 flex-col border-r border-gray-200 lg:w-[340px] lg:shrink-0', mode !== 'idle' ? 'hidden lg:flex' : 'flex flex-1 lg:flex-none']">
         <!-- Page Header -->
         <div class="flex items-center justify-between flex-shrink-0 p-4 space-x-4 border-b border-gray-200">
           <div>
             <h1 class="text-2xl font-bold text-gray-900">Mémos</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Gérez tous les mémos du système</p>
           </div>
           <button
-              disabled title="Consultation uniquement"
-              class="flex items-center gap-2 px-2.5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm"
+              type="button" @click="naviguerCreerMemo"
+              :disabled="lectureSeule" :aria-describedby="lectureSeule ? 'memo-write-status' : undefined"
+              class="flex items-center gap-2 px-2.5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span class="text-lg leading-none">+</span>
             <span>Nouveau mémo</span>
           </button>
         </div>
+        <p v-if="lectureSeule" id="memo-write-status" class="px-4 py-2 text-xs text-gray-600">
+          Création et décisions indisponibles sur ce serveur.
+        </p>
 
         <!-- Colonne gauche : sidebar liste -->
-        <div class=" flex-shrink-0 flex flex-col min-h-0 px-4">
+        <div class="flex flex-1 flex-col min-h-0 overflow-y-auto px-4">
           <MemoSidebar
               :memos="memosFiltres"
               :current-page="currentPage"
               :per-page="perPage"
               :total-items="memoStore.totalMemos"
+              :unread-total="memoStore.unreadMemosCount"
               @page-change="changerPage"
               @limit-change="changerLimite"
               :is-loading="memoStore.isLoading"
@@ -52,7 +57,7 @@
       </div>
 
       <!-- Layout 2 colonnes -->
-      <div class="flex gap-3 flex-1 min-h-0 z-50">
+      <div :class="['min-h-0 min-w-0 flex-1', mode === 'idle' ? 'hidden lg:flex' : 'flex']">
         <!-- Colonne centrale : chat -->
         <div class="flex-1 min-w-0 flex flex-col min-h-0 bg-white shadow-sm overflow-hidden">
           <!-- Mode idle : invitation (desktop seulement) -->
@@ -68,15 +73,15 @@
           <MemoCreateChat
               v-else-if="!lectureSeule && mode === 'create'"
               @created="onMemoCreated"
-              @cancel="mode = 'idle'"
+              @cancel="annulerEdition"
               :preselected-employee-guid="getQueryString(route.query.employeeGuid)"
-              :preselected-employee-name="getQueryString(route.query.employeeName)"
+              :draft="brouillonEdite"
           />
 
           <!-- Mode detail : conversation -->
           <MemoDetailChat
               v-else-if="mode === 'detail' && memoSelectionneGuid"
-              :key="`${memoStore.sessionKey}:${memoSelectionneGuid}`"
+              :key="`${memoStore.sessionKey}:${memoSelectionneGuid}:${detailRevision}`"
               :memo-guid="memoSelectionneGuid"
               :manager-guid="managerGuid"
               @action-done="onActionDone"
@@ -86,24 +91,25 @@
       </div>
 
       <!-- Panel droit : visible uniquement en mode detail sur lg+ -->
-      <div v-if="mode === 'detail'" class="hidden lg:flex gap-3 min-h-0">
-        <div class="w-[280px] flex-shrink-0 flex flex-col min-h-0">
+      <aside v-if="mode === 'detail' && memoSelectionne" aria-label="Informations complémentaires"
+             class="max-h-[25dvh] shrink-0 overflow-y-auto border-t lg:max-h-none lg:w-[260px] lg:border-l lg:border-t-0">
           <MemoDetailPanel
               v-if="memoSelectionne"
               :memo="memoSelectionne"
-              :manager-guid="managerGuid"
               :read-only="lectureSeule"
               :is-processing="isProcessing"
               :action-type="actionType"
-              @approuver="approuverMemo"
-              @rejeter="rejeterMemo"
-              @revoquer="revoquerMemo"
+              :write-error="erreurAction"
+              @modifier="modifierMemo"
+              @soumettre="agirSurMemo('SUBMIT')"
+              @approuver="agirSurMemo('APPROVE')"
+              @rejeter="agirSurMemo('REJECT')"
+              @revoquer="agirSurMemo('REVOKE')"
           />
-          <div v-else class="flex-1 bg-white/60 rounded-2xl" />
-        </div>
-      </div>
+      </aside>
     </main>
 
+    </div>
     <Footer />
   </div>
 </template>
@@ -123,7 +129,7 @@ import MemoCreateChat from './memoCreateChat.vue';
 import HeadBuilder from '@/utils/HeadBuilder';
 import footerCss from '../../assets/css/toke-footer-24.css?url';
 import type { MemoItem } from './memoSidebar.vue'
-import { formatMemoMessage } from '@/utils/memoLexicon';
+import { formatMemoTitle } from '@/utils/memoLexicon';
 import { memoReadErrorMessage } from '@/utils/memoReadError';
 
 const router = useRouter();
@@ -138,7 +144,9 @@ const route = useRoute()
 // 'idle'   : rien de sélectionné (desktop : message d'accueil)
 // 'create' : formulaire de création inline
 // 'detail' : consultation d'un mémo existant
-const lectureSeule = true;
+const lectureSeule = computed(() => !memoStore.writesEnabled);
+const brouillonEdite = ref<Memo>();
+const detailRevision = ref(0);
 const mode = ref<'idle' | 'create' | 'detail'>('idle');
 
 // ── Sélection ──────────────────────────────────
@@ -185,28 +193,19 @@ const employesFiltreOptions = computed(() => {
   const map = new Map<string, { guid: string; nom: string }>();
   for (const employee of memoStore.employees) {
     const nom = `${employee.first_name || ''} ${employee.last_name || ''}`.trim();
-    if (employee.guid && employee.guid !== managerGuid.value) map.set(employee.guid, { guid: employee.guid, nom });
-  }
-  /* Les options issues des mémos ne couvrent que la page chargée.
-     Le sélecteur reste alimenté par les employés déjà récupérés ; une source
-     globale de collaborateurs est requise pour une exhaustivité parfaite. */
-  for (const memo of memoStore.memos) {
-    if (memo.destinataireId && memo.destinataireId !== managerGuid.value && memo.destinataireNom && memo.destinataireNom !== 'N/A') {
-      map.set(memo.destinataireId, { guid: memo.destinataireId, nom: memo.destinataireNom });
-    }
+    if (nom && employee.guid && employee.guid !== managerGuid.value) map.set(employee.guid, { guid: employee.guid, nom });
   }
   return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom));
 });
 
 const getInterlocuteur = (memo: Memo) => {
-  const destNom = memo.destinataireNom && memo.destinataireNom !== 'N/A' ? memo.destinataireNom : null;
-  if (memo.autoGenerated) return {
-    nom: destNom ?? memo.createurNom ?? '—',
-    code: memo.destinataireCode !== 'N/A' ? memo.destinataireCode : memo.createurCode,
-    departement: memo.destinataireDepartement !== 'N/A' ? memo.destinataireDepartement : memo.createurDepartement,
+  if (!memo.autoGenerated && memo.destinataireId === managerGuid.value) return {
+    nom: memo.createurNom,
+    code: memo.createurCode !== 'N/A' ? memo.createurCode : '',
+    departement: memo.createurDepartement !== 'N/A' ? memo.createurDepartement : '',
   };
   return {
-    nom: destNom ?? '—',
+    nom: memo.destinataireNom,
     code: memo.destinataireCode !== 'N/A' ? memo.destinataireCode : '',
     departement: memo.destinataireDepartement !== 'N/A' ? memo.destinataireDepartement : '',
   };
@@ -214,16 +213,16 @@ const getInterlocuteur = (memo: Memo) => {
 
 const memosFiltres = computed(() => memoStore.memos.map(m => {
   const i = getInterlocuteur(m);
-  return { ...m, titre: formatMemoMessage(m.titre),
+  return { ...m, titre: formatMemoTitle(m.titre),
     interlocuteurNom: i.nom, interlocuteurCode: i.code,
     interlocuteurDepartement: i.departement, isRead: m.isRead };
 }));
 
 const chargerPage = async (force = true) => {
+  if (!memoStore.sessionKey) return;
+  const version = ++requestVersion;
   try {
     erreur.value = '';
-    if (!managerGuid.value) return;
-    const version = ++requestVersion;
     await memoStore.loadMemos(managerGuid.value, force, {
       offset: (currentPage.value - 1) * perPage.value, limit: perPage.value,
       memo_type: filtres.value.type === 'auto_generated' ? undefined : (filtres.value.type || undefined),
@@ -233,11 +232,18 @@ const chargerPage = async (force = true) => {
       sort: tri.value,
       ...(filtres.value.type === 'auto_generated' ? { auto_generated: true } : {}),
     });
-    if (version !== requestVersion) return;
-  } catch (error) { erreur.value = memoReadErrorMessage(error, 'Impossible de charger les mémos.'); console.error(error); }
+  } catch (error) {
+    if (version === requestVersion) {
+      erreur.value = memoReadErrorMessage(error, 'Impossible de charger les mémos.');
+      console.error(error);
+    }
+  }
 };
 const changerPage = (page: number) => { currentPage.value = page; void chargerPage(); };
 const changerLimite = (limit: number) => { perPage.value = limit; currentPage.value = 1; void chargerPage(); };
+watch(() => memoStore.realtimeRevision, (next, previous) => {
+  if (next && next !== previous) void chargerPage();
+});
 watch([filtres, tri], () => { currentPage.value = 1; void chargerPage(); }, { deep: true });
 watch(recherche, () => { clearTimeout(debounceHandle); debounceHandle = setTimeout(() => {
   currentPage.value = 1; void chargerPage();
@@ -246,83 +252,55 @@ watch(recherche, () => { clearTimeout(debounceHandle); debounceHandle = setTimeo
 // ── Actions métier (depuis le panel droit) ─────
 const isProcessing = ref(false);
 const actionType = ref<'approve' | 'reject' | 'revoke' | null>(null);
+const erreurAction = ref('');
+let lastCommand: { payload: string; id: string } | undefined;
 
-const approuverMemo = async () => {
-  if (lectureSeule) return;
-  if (!memoSelectionne.value || isProcessing.value) return;
+async function agirSurMemo(action: 'APPROVE' | 'REJECT' | 'REVOKE' | 'SUBMIT') {
+  const memo = memoSelectionne.value;
+  if (lectureSeule.value || !memo || isProcessing.value) return;
   const session = memoStore.sessionKey;
-  const guid = memoSelectionne.value.guid;
   const manager = managerGuid.value;
+  const command = { action, guid: memo.guid, version: memo.version ?? null };
+  const payload = JSON.stringify(command);
+  if (lastCommand?.payload !== payload) lastCommand = { payload, id: crypto.randomUUID() };
   isProcessing.value = true;
-  actionType.value = 'approve';
+  erreurAction.value = '';
+  actionType.value = action === 'SUBMIT' ? null : action === 'APPROVE' ? 'approve' : action === 'REJECT' ? 'reject' : 'revoke';
   try {
-    const response = await MemoService.validateMemo(guid, manager);
-    if (!response.success) return;
+    await MemoService.command(command, lastCommand.id);
     if (session !== memoStore.sessionKey) return;
-    await memoStore.refreshMemo(manager, guid);
-    if (session !== memoStore.sessionKey) return;
-    memoSelectionneGuid.value = '';
-  } catch (e: any) {
-    console.error('❌ Approbation:', e);
+    await memoStore.refreshMemo(manager, memo.guid, true);
+    if (session === memoStore.sessionKey && memoSelectionneGuid.value === memo.guid) detailRevision.value++;
+  } catch (error) {
+    if (session === memoStore.sessionKey && memoSelectionneGuid.value === memo.guid)
+      erreurAction.value = memoReadErrorMessage(error, 'Impossible d’appliquer cette action.');
   } finally {
-    if (session !== memoStore.sessionKey) return;
-    isProcessing.value = false;
-    actionType.value = null;
+    if (session === memoStore.sessionKey) {
+      isProcessing.value = false;
+      actionType.value = null;
+    }
   }
-};
+}
 
-const rejeterMemo = async () => {
-  if (lectureSeule) return;
-  if (!memoSelectionne.value || isProcessing.value) return;
-  const session = memoStore.sessionKey;
-  const guid = memoSelectionne.value.guid;
-  const manager = managerGuid.value;
-  isProcessing.value = true;
-  actionType.value = 'reject';
-  try {
-    await MemoService.rejetMemo(guid, manager);
-    if (session !== memoStore.sessionKey) return;
-    await memoStore.refreshMemo(manager, guid);
-    if (session !== memoStore.sessionKey) return;
-    memoSelectionneGuid.value = '';
-  } catch (e: any) {
-    console.error('❌ Rejet:', e);
-  } finally {
-    if (session !== memoStore.sessionKey) return;
-    isProcessing.value = false;
-    actionType.value = null;
-  }
-};
-
-const revoquerMemo = async () => {
-  if (lectureSeule) return;
-  if (!memoSelectionne.value || isProcessing.value) return;
-  const session = memoStore.sessionKey;
-  const guid = memoSelectionne.value.guid;
-  const manager = managerGuid.value;
-  isProcessing.value = true;
-  actionType.value = 'revoke';
-  try {
-    await MemoService.revokeMemo(guid, manager);
-    if (session !== memoStore.sessionKey) return;
-    await memoStore.refreshMemo(manager, guid);
-    if (session !== memoStore.sessionKey) return;
-    memoSelectionneGuid.value = '';
-  } catch (e: any) {
-    console.error('❌ Révocation:', e);
-  } finally {
-    if (session !== memoStore.sessionKey) return;
-    isProcessing.value = false;
-    actionType.value = null;
-  }
-};
+function modifierMemo() {
+  const memo = memoSelectionne.value;
+  if (lectureSeule.value || !memo?.capabilities?.edit || isProcessing.value) return;
+  brouillonEdite.value = memo;
+  mode.value = 'create';
+}
+function annulerEdition() {
+  mode.value = brouillonEdite.value ? 'detail' : 'idle';
+  brouillonEdite.value = undefined;
+}
 
 // ── Methods ────────────────────────────────────
-const selectionnerMemo = async (memo: MemoItem) => {
-  memoSelectionneGuid.value = memo.guid;
+const ouvrirMemo = (guid: string) => {
+  erreurAction.value = '';
+  memoSelectionneGuid.value = guid;
   mode.value = 'detail';
-
 };
+
+const selectionnerMemo = (memo: MemoItem) => ouvrirMemo(memo.guid);
 
 const onActionDone = async () => {
   // Le composant détail a déjà rafraîchi le mémo concerné.
@@ -335,7 +313,8 @@ const onActionDone = async () => {
 // };
 
 const naviguerCreerMemo = () => {
-  if (lectureSeule) return;
+  if (lectureSeule.value) return;
+  brouillonEdite.value = undefined;
   memoSelectionneGuid.value = '';
   router.replace({ name: 'memoList' }); // nettoie les query params sans recharger la page
   mode.value = 'create';
@@ -343,19 +322,16 @@ const naviguerCreerMemo = () => {
 
 const onMemoCreated = async (newGuid: string) => {
   const session = memoStore.sessionKey;
-  const manager = managerGuid.value;
-  if (newGuid) {
-    // Une seule requête ciblée au lieu de recharger toute la liste.
-    await memoStore.refreshMemo(manager, newGuid);
-    if (session !== memoStore.sessionKey) return;
-    try { await memoStore.confirmRead(manager, newGuid); }
-    catch (error) { console.error('Lecture non enregistrée', error); }
-    if (session !== memoStore.sessionKey) return;
-    memoSelectionneGuid.value = newGuid;
-    mode.value = 'detail';
-  } else {
-    mode.value = 'idle';
+  brouillonEdite.value = undefined;
+  currentPage.value = 1;
+  await chargerPage(true);
+  if (session !== memoStore.sessionKey) return;
+  try {
+    await memoStore.refreshMemo(managerGuid.value, newGuid, true);
+  } catch {
+    // Le détail assure sa propre gestion d'erreur et permet de réessayer.
   }
+  if (session === memoStore.sessionKey) ouvrirMemo(newGuid);
 };
 
 const reinitialiserFiltres = () => {
@@ -364,15 +340,7 @@ const reinitialiserFiltres = () => {
   tri.value = 'recent';
 };
 
-const chargerMemos = async () => {
-  try {
-    erreur.value = '';
-    if (!managerGuid.value) { erreur.value = 'ID du manager non disponible'; return; }
-    await chargerPage(false);
-  } catch (error) {
-    erreur.value = memoReadErrorMessage(error, 'Erreur lors du chargement des mémos.');
-  }
-};
+const chargerMemos = () => chargerPage(false);
 
 const getQueryString = (value: unknown): string => {
   if (typeof value === 'string') return value
@@ -386,31 +354,33 @@ watch(() => memoStore.sessionKey, () => {
   erreur.value = ''; recherche.value = ''; currentPage.value = 1;
   filtres.value = { employeId: '', type: '', statut: '' };
   isProcessing.value = false; actionType.value = null;
+  brouillonEdite.value = undefined; erreurAction.value = ''; lastCommand = undefined;
 }, { flush: 'sync' });
 
 // ── Lifecycle ──────────────────────────────────
-onMounted(async () => {
-  const session = memoStore.sessionKey;
+onMounted(() => {
   HeadBuilder.apply({
     title: 'Mémos - Toké',
     css: [footerCss],
     meta: { viewport: 'width=device-width, initial-scale=1.0' }
   });
+});
+
+watch(() => memoStore.sessionKey, async (session) => {
+  if (!session) return;
   await chargerMemos();
   if (session !== memoStore.sessionKey) return;
 
-  // Ouverture directe d'un mémo depuis le contrôle des pointages.
-  const requestedMemoGuid = getQueryString(route.query.memoGuid)
-  if (requestedMemoGuid && memoStore.getMemoByGuid(requestedMemoGuid)) {
-    await selectionnerMemo(memoStore.getMemoByGuid(requestedMemoGuid)!)
-  }
+  // Le détail applique ses propres contrôles et peut être hors de la page courante.
+  const requestedMemoGuid = getQueryString(route.query.memoGuid);
+  if (requestedMemoGuid) ouvrirMemo(requestedMemoGuid);
 
   // Ajouter dans onMounted, après chargerMemos()
   const { action, employeeGuid, employeeName, entryGuid, date } = route.query
-  if (!lectureSeule && action === 'create') {
+  if (!lectureSeule.value && action === 'create') {
     mode.value = 'create'
     // Si memoCreateChat accepte des props pré-remplies, tu peux les stocker dans un ref ici
   }
-});
+}, { immediate: true, flush: 'post' });
 
 </script>

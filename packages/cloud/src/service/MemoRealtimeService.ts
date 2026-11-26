@@ -3,22 +3,9 @@ import { io, type Socket } from 'socket.io-client';
 import axiosClient from '@/tools/Fetch.Client';
 import MemoService from '@/service/MemoService';
 
-export type MemoRealtimeAction =
-  | 'created'
-  | 'updated'
-  | 'responded'
-  | 'validated'
-  | 'rejected'
-  | 'revoked'
-  | 'deleted'
-  | 'escalated';
-
 export interface MemoRealtimePayload {
-  guid: string;
-  action: MemoRealtimeAction;
-  affectedUserGuids: string[];
-  actorUserGuid?: string;
-  occurredAt: string;
+  revision: string;
+  unreadTotal: number;
 }
 
 interface MemoRealtimeCallbacks {
@@ -92,7 +79,7 @@ export default class MemoRealtimeService {
     this.hasConnectedOnce = false;
 
     const generation = this.generation;
-    const ticket = await MemoService.createRealtimeTicket(userGuid);
+    const ticket = await MemoService.createRealtimeTicket();
     if (generation !== this.generation || this.userGuid !== userGuid) return;
     const namespaceUrl = `${this.getSocketUrl()}/memo-realtime`;
 
@@ -115,21 +102,21 @@ export default class MemoRealtimeService {
       if (generation !== this.generation || this.socket !== socket) return;
       const reconnect = this.hasConnectedOnce;
       this.hasConnectedOnce = true;
-      this.callbacks?.onConnectionChange?.(true);
 
       if (reconnect) {
-        await this.callbacks?.onReconnect?.();
+        await this.runCallback(() => this.callbacks?.onReconnect?.());
       }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
       if (generation !== this.generation || this.socket !== socket) return;
       this.callbacks?.onConnectionChange?.(false);
+      if (reason === 'io server disconnect') void this.refreshTicketAndReconnect();
     });
 
     socket.on('memo:changed', async (payload: MemoRealtimePayload) => {
       if (generation !== this.generation || this.socket !== socket) return;
-      await this.callbacks?.onChange(payload);
+      await this.runCallback(() => this.callbacks?.onChange(payload));
     });
 
     socket.on(
@@ -148,7 +135,7 @@ export default class MemoRealtimeService {
           // BFF -> API tenant se coupe. Une reconnexion upstream implique
           // donc une resynchronisation REST unique pour rattraper les événements perdus.
           if (status.reconnected) {
-            await this.callbacks?.onReconnect?.();
+            await this.runCallback(() => this.callbacks?.onReconnect?.());
           }
         }
       },
@@ -169,16 +156,23 @@ export default class MemoRealtimeService {
     socket.connect();
   }
 
+  private static async runCallback(callback: () => void | Promise<void>): Promise<void> {
+    try {
+      await callback();
+    } catch (error) {
+      console.error('Actualisation des mémos impossible', error);
+    }
+  }
+
   private static async refreshTicketAndReconnect(): Promise<void> {
     if (!this.socket || !this.userGuid) return;
     if (this.refreshTicketPromise) return this.refreshTicketPromise;
 
     const generation = this.generation;
     const socket = this.socket;
-    const userGuid = this.userGuid;
     this.refreshTicketPromise = (async () => {
       try {
-        const ticket = await MemoService.createRealtimeTicket(userGuid);
+        const ticket = await MemoService.createRealtimeTicket();
 
         if (this.generation !== generation || this.socket !== socket) return;
 
@@ -187,6 +181,8 @@ export default class MemoRealtimeService {
         };
 
         socket.connect();
+      } catch {
+        if (this.generation === generation && this.socket === socket) this.disconnect();
       } finally {
         if (this.generation === generation) this.refreshTicketPromise = null;
       }

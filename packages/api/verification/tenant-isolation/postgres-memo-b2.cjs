@@ -407,6 +407,9 @@ async function main() {
           'packages/api/src/tools/user-session.client.ts',
         ),
         'tools/credential-extractor.service.ts': credentials,
+        'utils/axios.config.ts': {
+          createApiClient() { throw Error('Unexpected delegated transport in direct-session fixture'); },
+        },
         'middle/tenant.middleware.ts': { tenantMiddleware },
         'master/database/db.initializer.ts': { TableInitializer: { isInitialized: () => false } },
         'tools/response.ts': { default: R },
@@ -446,6 +449,7 @@ async function main() {
           process: { env: sourceEnvironment },
           require(name) {
             if (name === 'sequelize') return runtime.sequelize;
+            if (name === 'node:crypto' && rel === 'middle/memo-b2-reads.ts') return crypto;
             if (name === '@toke/shared')
               return {
                 HttpStatus: { UNAUTHORIZED: 401, INTERNAL_ERROR: 500, SERVER_UNAVAILABLE: 503 },

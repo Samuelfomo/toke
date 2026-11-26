@@ -1,4 +1,5 @@
 import MemoReadsModel from '../model/MemoReadsModel.js';
+import type { Transaction } from 'sequelize';
 
 export default class MemoReads extends MemoReadsModel {
   constructor() {
@@ -9,7 +10,7 @@ export default class MemoReads extends MemoReadsModel {
     return new MemoReads().getReads(memoIds, userId);
   }
 
-  static _markRead(memoId: number, userId: number, readAt: Date): Promise<Date> {
-    return new MemoReads().saveRead(memoId, userId, readAt);
+  static _markRead(memoId: number, userId: number, readAt: Date | string, transaction?: Transaction): Promise<Date> {
+    return new MemoReads().saveRead(memoId, userId, readAt, transaction);
   }
 }

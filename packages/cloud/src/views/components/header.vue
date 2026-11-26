@@ -244,10 +244,18 @@ router.afterEach((to) => {
   updateIndicator()
 })
 
+const actualiserLecturesMemos = () => {
+  const guid = userStore.user?.guid
+  if (!guid || !memoStore.sessionKey) return
+  if (memoStore.isRealtimeConnected) void memoStore.refreshReadState(guid)
+  else void memoStore.startPolling(guid)
+}
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   updateIndicator()
   window.addEventListener('resize', updateIndicator)
+  window.addEventListener('focus', actualiserLecturesMemos)
 
   HeadBuilder.apply({
     title: 'Toké',
@@ -255,25 +263,16 @@ onMounted(() => {
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })
 
-  const managerGuid = userStore.user?.guid
-  if (managerGuid) {
-    memoStore.startPolling(managerGuid)
-  } else {
-    const unwatch = watch(
-        () => userStore.user?.guid,
-        (guid) => {
-          if (guid) {
-            memoStore.startPolling(guid)
-            unwatch()
-          }
-        }
-    )
-  }
+  watch(() => memoStore.sessionKey, (session) => {
+    const guid = userStore.user?.guid
+    if (session && guid) void memoStore.startPolling(guid)
+  }, { immediate: true })
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', updateIndicator)
+  window.removeEventListener('focus', actualiserLecturesMemos)
   memoStore.stopPolling()
 })
 </script>

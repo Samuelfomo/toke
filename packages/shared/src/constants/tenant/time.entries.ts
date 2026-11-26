@@ -60,7 +60,7 @@ export const TIME_ENTRIES_VALIDATION = {
     REQUIRED: true,
   },
   GPS_ACCURACY: {
-    MIN: 1,
+    MIN: 0,
     MAX: 2147483647,
   },
   QR_CODE: {

@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import ScheduleAssignmentsLogModel from '../model/ScheduleAssignmentsLogModel.js';
 import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
 
@@ -173,12 +174,12 @@ export default class ScheduleAssignmentsLog extends ScheduleAssignmentsLogModel 
     return this.id === undefined;
   }
 
-  async save(): Promise<void> {
+  async save(transaction?: Transaction): Promise<void> {
     try {
       if (!this.isNew()) {
         throw new Error('Logs cannot be updated, only created');
       }
-      await this.create();
+      await this.create(transaction);
     } catch (error: any) {
       throw new Error(error.message || error);
     }

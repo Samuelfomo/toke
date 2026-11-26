@@ -259,6 +259,20 @@
             <p v-else class="text-sm text-amber-700">Le détail du modèle est indisponible.</p>
           </div>
 
+          <section v-if="replacementPreview" role="status"
+                   class="mt-4 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
+            <p class="font-semibold">Affectations à remplacer</p>
+            <ul class="space-y-2">
+              <li v-for="item in replacementPreview.affected" :key="item.guid">
+                <strong>{{ item.template_name || 'Affectation existante' }}</strong>
+                <p>Remplacée du {{ formatDate(item.replaced.from) }} {{ item.replaced.to ? `au ${formatDate(item.replaced.to)}` : 'sans date de fin' }}.</p>
+                <p v-for="period in item.preserved" :key="period.from">
+                  Conservée du {{ formatDate(period.from) }} {{ period.to ? `au ${formatDate(period.to)}` : 'sans date de fin' }}.
+                </p>
+              </li>
+            </ul>
+          </section>
+
           <!-- Global error -->
           <div v-if="globalError"
                class="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs"
@@ -299,19 +313,19 @@
             </button>
             <button
                 v-else
-                @click="submit"
+                @click="submit(replacementPreview?.confirmation)"
                 :disabled="saving"
                 class="flex items-center gap-2 px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-60"
             >
               <IconLoader2 v-if="saving" :size="14" class="animate-spin"/>
               <IconDeviceFloppy v-else :size="14"/>
-              {{ saving ? 'Enregistrement...' : 'Confirmer' }}
+              {{ saving ? 'Enregistrement...' : replacementPreview ? 'Confirmer le remplacement' : 'Confirmer' }}
             </button>
           </template>
 
           <button
               v-else
-              @click="submit"
+              @click="submit()"
               :disabled="saving"
               class="flex items-center gap-2 px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-60"
           >
@@ -326,12 +340,13 @@
 </template>
 
 <script setup lang="ts">
-import {ref, reactive, computed, onMounted} from 'vue'
+import {ref, reactive, computed, onMounted, watch} from 'vue'
 import {
   IconCalendarStats, IconX, IconLoader2, IconDeviceFloppy,
   IconAlertTriangle, IconCheck,
   IconChevronLeft, IconChevronRight, IconUser, IconUsers,
 } from '@tabler/icons-vue'
+import {ApiClientError} from '@/tools/Fetch.Client'
 import ScheduleAssignmentService from '@/service/ScheduleAssignment'
 import type {
   ICreateScheduleAssignmentPayload,
@@ -394,6 +409,13 @@ const form = reactive({
 const errors = reactive<Record<string, string>>({})
 const globalError = ref('')
 const saving = ref(false)
+type ImpactPeriod = { from: string; to: string | null }
+type ReplacementPreview = {
+  confirmation: string
+  affected: Array<{ guid: string; template_name: string | null; replaced: ImpactPeriod; preserved: ImpactPeriod[] }>
+}
+const replacementPreview = ref<ReplacementPreview | null>(null)
+watch(form, () => { replacementPreview.value = null })
 
 useBodyScrollLock(true)
 
@@ -417,7 +439,7 @@ function initials(name?: string): string {
 
 function formatDate(d?: string): string {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'})
+  return new Date(d).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC'})
 }
 
 // ── Load data ──────────────────────────────────────────────────────────────
@@ -536,48 +558,63 @@ function validateAll(): boolean {
   return ok
 }
 
-async function submit() {
+async function submit(confirmation?: string) {
   if (saving.value || !validateAll()) return
   saving.value = true
+  replacementPreview.value = null
 
-  let res
+  try {
+    let res
 
-  if (isEdit.value) {
-    const payload: IUpdateScheduleAssignmentPayload = {
-      session_template: form.session_template_guid,
-      start_date: form.start_date,
-      end_date: form.end_date?.trim() || null,
-      reason: form.reason?.trim() || null,
-      active: form.active,
+    if (isEdit.value) {
+      const payload: IUpdateScheduleAssignmentPayload = {
+        session_template: form.session_template_guid,
+        start_date: form.start_date,
+        end_date: form.end_date?.trim() || null,
+        reason: form.reason?.trim() || null,
+        active: form.active,
+      }
+
+      res = await ScheduleAssignmentService.update(
+          props.assignment!.guid,
+          payload,
+      )
+    } else {
+      const payload: ICreateScheduleAssignmentPayload = {
+        session_template: form.session_template_guid,
+        created_by: currentUserGuid.value,
+        start_date: form.start_date,
+        related: form.target_guid,
+        family: form.target_type,
+        end_date: form.end_date?.trim() || null,
+        reason: form.reason?.trim() || undefined,
+        active: true,
+        replacement_confirmation: confirmation,
+      }
+
+      res = await ScheduleAssignmentService.create(payload)
     }
 
-    res = await ScheduleAssignmentService.update(
-        props.assignment!.guid,
-        payload,
-    )
-  } else {
-    const payload: ICreateScheduleAssignmentPayload = {
-      session_template: form.session_template_guid,
-      created_by: currentUserGuid.value,
-      start_date: form.start_date,
-      related: form.target_guid,
-      family: form.target_type,
-      end_date: form.end_date?.trim() || null,
-      reason: form.reason?.trim() || undefined,
-      active: true,
+    if (res?.success !== true) {
+      globalError.value = res?.error?.message ?? 'Impossible d’enregistrer l’affectation.'
+      return
     }
 
-    res = await ScheduleAssignmentService.create(payload)
+    emit('saved')
+  } catch (error) {
+    if (error instanceof ApiClientError && error.code === 'SCHEDULE_ASSIGNMENT_OVERLAP') {
+      const details = error.details as ReplacementPreview | undefined
+      if (details?.confirmation && details.affected?.length) {
+        replacementPreview.value = details
+        return
+      }
+    }
+    globalError.value = error instanceof Error && error.message
+        ? error.message
+        : 'Impossible d’enregistrer l’affectation.'
+  } finally {
+    saving.value = false
   }
-
-  saving.value = false
-
-  if (res?.success === false || res?.error) {
-    globalError.value = res?.error?.message ?? 'Une erreur est survenue'
-    return
-  }
-
-  emit('saved')
 }
 
 function requestClose(): void {

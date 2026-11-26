@@ -263,7 +263,7 @@ export default class TimeEntries extends TimeEntriesModel {
     return this.longitude;
   }
 
-  getGpsAccuracy(): number | undefined {
+  getGpsAccuracy(): number | null {
     return this.gps_accuracy;
   }
 
@@ -385,7 +385,7 @@ export default class TimeEntries extends TimeEntriesModel {
     return this;
   }
 
-  setGpsAccuracy(accuracy: number): TimeEntries {
+  setGpsAccuracy(accuracy: number | null): TimeEntries {
     this.gps_accuracy = accuracy;
     return this;
   }
@@ -1105,7 +1105,7 @@ export default class TimeEntries extends TimeEntriesModel {
     this.server_received_at = data.server_received_at;
     this.latitude = Number(data.latitude);
     this.longitude = Number(data.longitude);
-    this.gps_accuracy = Number(data.gps_accuracy);
+    this.gps_accuracy = data.gps_accuracy == null ? null : Number(data.gps_accuracy);
     this.qr_code = data.qr_code;
     this.device_info = data.device_info;
     this.ip_address = data.ip_address;

@@ -38,6 +38,9 @@ import {
   ScheduleAdjustmentError,
 } from '../../tools/schedule.assignment.adjustment.service.js';
 
+import { createManualAssignment, ManualAssignmentError, verifyManualReplacementActor } from '../../tools/schedule.assignment.manual.service.js';
+import TenantManager from '../database/db.tenant-manager.js';
+
 const router = Router();
 
 // ============================================
@@ -262,11 +265,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setSessionTemplate(templateSnapshot)
       .setCreatedBy(createdByObj.getId()!)
       .setStartDate(validatedData.start_date)
+      .setEndDate(validatedData.end_date ?? null)
       .setActive(validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE);
-
-    if (validatedData.end_date) {
-      assignmentObj.setEndDate(validatedData.end_date);
-    }
 
     if (validatedData.reason) {
       assignmentObj.setReason(validatedData.reason);
@@ -307,13 +307,41 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       assignmentObj.setContinuationOfGuid(validatedData.continuation_of_guid);
     }
 
-    await assignmentObj.save();
+    const confirmation = req.body.replacement_confirmation;
+    if (confirmation !== undefined && (typeof confirmation !== 'string' || !/^[a-f0-9]{64}$/.test(confirmation))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'SCHEDULE_ASSIGNMENT_INVALID_CONFIRMATION',
+        message: 'Confirmation du remplacement invalide.',
+      });
+    }
+
+    let savedAssignment;
+    if (validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE) {
+      savedAssignment = await createManualAssignment(assignmentObj, {
+        tenant: tenant.config.reference,
+        family,
+        related: assignmentObj.getRelated()!,
+        from: validatedData.start_date,
+        to: validatedData.end_date ?? null,
+        creator: createdByObj.getId()!,
+        template: templateSnapshot,
+        reason: validatedData.reason,
+        continuation: validatedData.continuation_of_guid,
+        timezone: tenant.config.timezone ?? TenantManager.getTimezone(),
+      }, () => verifyManualReplacementActor(req, tenant.config.reference, validatedData.created_by), confirmation);
+    } else {
+      await assignmentObj.save();
+      savedAssignment = await assignmentObj.toJSON();
+    }
 
     return R.handleCreated(res, {
       message: SCHEDULE_ASSIGNMENTS_MESSAGES.CREATED_SUCCESSFULLY,
-      schedule_assignments: await assignmentObj.toJSON(),
+      schedule_assignments: savedAssignment,
     });
   } catch (error: any) {
+    if (error instanceof ManualAssignmentError) {
+      return R.handleError(res, error.status, { code: error.code, message: error.message, details: error.details });
+    }
     if (error.code) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: error.code,
@@ -821,8 +849,6 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
-    console.log('req.body', req.body);
-
     const validatedData = validateScheduleAssignmentsUpdate(req.body);
 
     if (validatedData.continuation_of_guid !== undefined) {
@@ -833,7 +859,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       assignmentObj.setStartDate(validatedData.start_date);
     }
 
-    if (validatedData.end_date !== undefined && validatedData.end_date !== null) {
+    if (validatedData.end_date !== undefined) {
       assignmentObj.setEndDate(validatedData.end_date);
     }
 
@@ -876,6 +902,19 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       }
     }
 
+    const currentTemplate = assignmentObj.getSessionTemplate();
+    let replacementTemplate: SessionTemplate | undefined;
+    if (validatedData.session_template && validatedData.session_template !== currentTemplate?.guid) {
+      const template = await SessionTemplate._load(validatedData.session_template, true);
+      if (!template) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+          message: SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+        });
+      }
+      replacementTemplate = template;
+    }
+
     const { new_definition } = req.body;
     if (new_definition) {
       if (!SessionTemplateValidationUtils.validateDefinition(new_definition)) {
@@ -885,12 +924,13 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         });
       }
 
-      const session_template = SessionTemplate.toObject(assignmentObj.getSessionTemplate());
+      const session_template = replacementTemplate ?? SessionTemplate.toObject(currentTemplate);
       const normalizedDefinition =
         SessionTemplateValidationUtils.normalizeDefinition(new_definition);
       session_template.setDefinition(normalizedDefinition);
-      assignmentObj.setNewSessionTemplate(session_template);
+      replacementTemplate = session_template;
     }
+    if (replacementTemplate) assignmentObj.setNewSessionTemplate(replacementTemplate);
 
     await assignmentObj.save();
 

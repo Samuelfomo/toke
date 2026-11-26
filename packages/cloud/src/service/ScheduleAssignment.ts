@@ -22,6 +22,7 @@ export interface ICreateScheduleAssignmentPayload {
     end_date?: string | null
     reason?: string
     active?: boolean
+    replacement_confirmation?: string
 }
 
 export interface IScheduleAssignmentListFilters {
@@ -129,16 +130,11 @@ export default class ScheduleAssignmentService {
     static async create(
         payload: ICreateScheduleAssignmentPayload,
     ): Promise<ApiResponse> {
-        try {
-            return await apiRequest({
-                path: `${baseUrl}/`,
-                method: 'POST',
-                data: payload,
-            })
-        } catch (error: unknown) {
-            console.error('ScheduleAssignmentService.create', error)
-            return error as ApiResponse
-        }
+        return await apiRequest({
+            path: baseUrl,
+            method: 'POST',
+            data: payload,
+        })
     }
 
     static async getAdjustmentServices(date: string): Promise<ApiResponse> {
@@ -173,16 +169,11 @@ export default class ScheduleAssignmentService {
         guid: string,
         payload: IUpdateScheduleAssignmentPayload,
     ): Promise<ApiResponse> {
-        try {
-            return await apiRequest({
-                path: `${baseUrl}/${guid}`,
-                method: 'PUT',
-                data: payload,
-            })
-        } catch (error: unknown) {
-            console.error('ScheduleAssignmentService.update', error)
-            return error as ApiResponse
-        }
+        return await apiRequest({
+            path: `${baseUrl}/${guid}`,
+            method: 'PUT',
+            data: payload,
+        })
     }
 
     static async deactivate(guid: string): Promise<ApiResponse> {

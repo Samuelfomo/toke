@@ -56,6 +56,15 @@ export function planningAlerts(diagnostics?: SuggestionDiagnostics | null): Plan
   if (historyCount) {
     alerts.push({ critical: false, count: historyCount, message: `${historyCount} anomalie(s) dans l’historique des plannings.` })
   }
+  const preflight = diagnostics.apiPreflight
+  if (preflight?.warnings?.length) {
+    alerts.push(...preflight.warnings.map(warning => ({
+      critical: false, message: warning.message, date: warning.date,
+      templateGuid: entries.get(`${warning.date}|${warning.requirementGuid}`)?.templateGuid,
+    })))
+  } else if (preflight?.warningCount) {
+    alerts.push({ critical: false, count: preflight.warningCount, message: `${preflight.warningCount} avertissement(s) de prévalidation.` })
+  }
   const regeneration = diagnostics.regeneration
   if (regeneration?.warnings?.length) {
     alerts.push(...regeneration.warnings.map(warning => ({ critical: false, message: warning.message })))

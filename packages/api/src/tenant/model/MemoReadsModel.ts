@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, type Transaction } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -18,7 +18,7 @@ export default class MemoReadsModel extends BaseModel {
   }
 
   // Écriture atomique, et exclusivement dans la couche Model.
-  protected async saveRead(memoId: number, userId: number, readAt: Date): Promise<Date> {
+  protected async saveRead(memoId: number, userId: number, readAt: Date | string, transaction?: Transaction): Promise<Date> {
     const table = tableName.MEMO_READS;
     const [rows] = await this.sequelize.query(
       `INSERT INTO "${table}" (memo_id, user_id, read_at)
@@ -26,7 +26,7 @@ export default class MemoReadsModel extends BaseModel {
        ON CONFLICT (memo_id, user_id)
        DO UPDATE SET read_at = GREATEST("${table}".read_at, EXCLUDED.read_at)
        RETURNING read_at`,
-      { replacements: { memoId, userId, readAt } },
+      { replacements: { memoId, userId, readAt }, transaction },
     );
     return new Date((rows as Array<{ read_at: Date }>)[0].read_at);
   }

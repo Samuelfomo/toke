@@ -1,4 +1,5 @@
 import { Agent, fetch } from 'undici';
+import { captureUnknownPlanningWindow } from './ortools.diagnostic.capture.js';
 
 import { EngineDiagnostics, EngineResult, PlanningInfeasibleError } from '../suggestion.engine.js';
 
@@ -120,6 +121,10 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
       solverTimeoutSeconds = seconds + 1;
     }
 
+    const wirePayload = planningSolverPayload({
+      ...input,
+      ...(solverTimeoutSeconds === undefined ? {} : { solverTimeoutSeconds }),
+    }, this.options.fixedAlternationSupported === true);
     const controller = new AbortController();
 
     const timeout = setTimeout(() => controller.abort(), PLANNING_SOLVER_HTTP_TIMEOUT_MS);
@@ -140,10 +145,7 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify(planningSolverPayload({
-          ...input,
-          ...(solverTimeoutSeconds === undefined ? {} : { solverTimeoutSeconds }),
-        }, this.options.fixedAlternationSupported === true)),
+        body: JSON.stringify(wirePayload),
         signal: controller.signal,
         dispatcher: solverDispatcher,
       });
@@ -254,13 +256,18 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
     }
 
     if (payload.status === 'UNKNOWN' && payload.solverStats?.statusName === 'UNKNOWN') {
+      const searchSeconds = Math.max(1, (solverTimeoutSeconds ?? 20) - 1);
+      await captureUnknownPlanningWindow(wirePayload, {
+        searchSeconds, workerStatus: payload.status, workerWallSeconds: payload.solverStats.wallTimeSeconds,
+        workerVersion: payload.solverVersion,
+      });
       throw new PlanningSolverTechnicalError(
         'Aucun planning faisable n’a été trouvé dans le temps imparti. Relancez avec un budget de calcul plus long.',
         'PLANNING_SOLVER_NO_FEASIBLE_SOLUTION',
         {
           period_from: input.periodFrom,
           period_to: input.periodTo,
-          search_seconds: Math.max(1, (solverTimeoutSeconds ?? 20) - 1),
+          search_seconds: searchSeconds,
           solverStats: payload.solverStats,
         },
       );

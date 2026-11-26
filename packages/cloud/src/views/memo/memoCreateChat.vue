@@ -1,534 +1,130 @@
 <template>
-  <MemoChat
-      :header-title="headerTitle"
-      :header-subtitle="headerSubtitle"
-      :show-welcome="!memoEnvoye"
-      welcome-title="Nouveau mémo"
-      welcome-text="Configurez votre mémo et commencez à écrire"
-      :messages="messagesFormatted"
-      :input-text="formulaire.contenu"
-      :selected-files="fichiers"
-      :is-recording="isRecording"
-      :recording-time="recordingTime"
-      :has-recording="!!audioBlob"
-      :recorded-duration="recordedDuration"
-      @update:input-text="formulaire.contenu = $event"
-      @back="$emit('cancel')"
-      @send="soumettreMemo"
-      @trigger-file-input="fileInput?.click()"
-      @toggle-recording="toggleRecording"
-      @remove-file="removeFile"
-      @remove-recording="deleteRecording"
-      @toggle-panel="showConfigPanel = !showConfigPanel"
-      @toggle-audio-play="toggleAudioPlay"
-      @download-audio="downloadAudioFromMessage"
-  >
-    <template #header-avatar>
-      <svg v-if="typeDestinataire === 'general'" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="avatar-icon">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-      </svg>
-      <svg v-else fill="none" stroke="currentColor" viewBox="0 0 24 24" class="avatar-icon">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-      </svg>
-    </template>
-
-    <template #side-panel>
-      <transition name="slide">
-        <div v-if="showConfigPanel" class="config-panel">
-          <div class="config-panel-header">
-            <h3>Configuration</h3>
-            <button @click="showConfigPanel = false" class="btn-close-panel">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="close-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="config-panel-content">
-            <!-- Destinataire -->
-            <div class="config-section">
-              <h4 class="config-section-title">Destinataire</h4>
-              <div v-if="employePreselectionne" class="employe-preselectionne">
-                <div class="employe-info-card">
-                  <div class="employe-avatar-small">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="avatar-icon-small">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                  </div>
-                  <div class="employe-text">
-                    <p class="employe-nom-selected">{{ employePreselectionne.name }}</p>
-                    <p class="employe-label">Destinataire</p>
-                  </div>
-                  <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <p class="employe-note">Cet employé a été sélectionné automatiquement</p>
-              </div>
-              <div v-else>
-                <div v-if="typeDestinataire === 'individuel'" class="form-group">
-                  <select v-model="formulaire.destinataireId" class="form-select" required>
-                    <option value="" disabled>Choisir un employé</option>
-                    <option v-for="emp in employes" :key="emp.guid" :value="emp.guid">
-                      {{ emp.name }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Type -->
-            <div class="config-section">
-              <h4 class="config-section-title">Type de mémo</h4>
-              <select v-model="formulaire.type" class="form-select">
-                <option disabled value="">Sélectionner un type</option>
-                <option v-for="opt in memoTypeOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Titre (type = other uniquement) -->
-            <div v-if="formulaire.type === MEMO_TYPE_OTHER" class="config-section">
-              <h4 class="config-section-title">Titre du mémo *</h4>
-              <input
-                  v-model="formulaire.titre"
-                  type="text"
-                  placeholder="Entrez le titre du mémo..."
-                  :class="{ 'input-error': !formulaire.titre.trim() }"
-              />
-            </div>
-
-            <!-- Terminé -->
-            <div class="config-section">
-              <button @click="terminerConfiguration" :disabled="!configurationComplete" class="btn-terminer">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="check-icon-btn">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-                Terminé
-              </button>
-            </div>
-          </div>
+  <MemoChat :header-title="draft ? 'Modifier le brouillon' : 'Nouveau mémo'"
+            :show-header-action="false" :show-input="false" @back="$emit('cancel')">
+    <template #memo-details>
+      <form class="mx-auto flex max-w-xl flex-col gap-4 rounded-xl bg-white p-4" @submit.prevent="enregistrer">
+        <div v-if="!draft" class="grid gap-4 sm:grid-cols-2">
+          <label class="grid gap-1 text-sm font-medium">
+            Destinataire
+            <select v-model="formulaire.destinataireId" class="rounded-md border border-gray-300 p-2"
+                    required :disabled="chargement || isSubmitting">
+              <option value="" disabled>{{ chargement ? 'Chargement…' : 'Choisir un collaborateur' }}</option>
+              <option v-for="person in employes" :key="person.guid" :value="person.guid">
+                {{ [person.first_name, person.last_name].filter(Boolean).join(' ') || 'Collaborateur sans nom' }}
+              </option>
+            </select>
+          </label>
+          <label class="grid gap-1 text-sm font-medium">
+            Type de mémo
+            <select v-model="formulaire.type" class="rounded-md border border-gray-300 p-2"
+                    required :disabled="isSubmitting" @change="definirTitre">
+              <option value="" disabled>Sélectionner un type</option>
+              <option v-for="(label, type) in memoTitles" :key="type" :value="type">{{ label }}</option>
+            </select>
+          </label>
         </div>
-      </transition>
+        <p v-if="!draft && !chargement && !employes.length && !erreur" class="text-sm text-gray-600">
+          Aucun destinataire autorisé.
+        </p>
+        <label class="grid gap-1 text-sm font-medium">
+          Titre
+          <input v-model="formulaire.titre" class="rounded-md border border-gray-300 p-2"
+                 required maxlength="200" :disabled="isSubmitting">
+        </label>
+        <label class="grid gap-1 text-sm font-medium">
+          Message
+          <textarea v-model="formulaire.contenu" class="rounded-md border border-gray-300 p-2"
+                    required maxlength="3000" rows="6" :disabled="isSubmitting"></textarea>
+        </label>
+        <p v-if="erreur" role="alert" class="text-sm text-red-700">{{ erreur }}
+          <button v-if="erreurDestinataires" type="button" class="underline" @click="chargerEmployes">Réessayer</button>
+        </p>
+        <button type="submit" :disabled="!peutEnregistrer || isSubmitting"
+                class="self-end rounded-lg bg-[#004aad] px-4 py-2 font-semibold text-white disabled:opacity-50">
+          {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer le brouillon' }}
+        </button>
+      </form>
     </template>
   </MemoChat>
-
-  <input
-      ref="fileInput"
-      type="file"
-      multiple
-      accept=".txt,.pdf,.jpg,.jpeg,.png,.mp3,.wav,.webm,.ogg"
-      @change="ajouterFichiers"
-      class="hidden"
-  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useUserStore } from '@/stores/userStore';
-import { TeamEmployee, useTeamStore } from '@/stores/teamStore';
-import MemoService, { CreateMemo, UploadedAttachment } from '@/service/MemoService';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import MemoService, { type MemoCommand, type MemoRecipient } from '@/service/MemoService';
+import { useMemoStore, type Memo } from '@/stores/memoStore';
+import { memoReadErrorMessage } from '@/utils/memoReadError';
 import MemoChat from './memoChat.vue';
-import '../../assets/css/toke-memo-08.css';
 
-interface FormulaireMemo {
-  destinataireId: string;
-  type: string;
-  titre: string;
-  contenu: string;
-}
-
-interface MemoEnvoye {
-  titre: string;
-  contenu: string;
-  fichiers: File[];
-  audioBlob: Blob | null;
-  audioURL: string | null;
-  duration: string;
-  timestamp: string;
-}
-
-// ── Props & Emits ──────────────────────────────
-interface Props {
-  /** GUID + nom pré-rempli si on vient d'une fiche de pointage */
-  preselectedEmployeeGuid?: string;
-  preselectedEmployeeName?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  preselectedEmployeeGuid: '',
-  preselectedEmployeeName: '',
-});
-
-const emit = defineEmits<{
-  /** Mémo créé avec succès → renvoie le guid du nouveau mémo */
-  created: [memoGuid: string];
-  /** Annulation / retour */
-  cancel: [];
-}>();
-
-// ── Stores ─────────────────────────────────────
-const userStore = useUserStore();
+const props = defineProps<{ preselectedEmployeeGuid?: string; draft?: Memo }>();
+const emit = defineEmits<{ created: [memoGuid: string]; cancel: [] }>();
+const memoStore = useMemoStore();
+const session = memoStore.sessionKey;
 let disposed = false;
-const operationKey = () => JSON.stringify([userStore.tenant?.guid, userStore.user?.guid, userStore.sessionGeneration]);
-const current = (key: string) => !disposed && userStore.isAuthenticated && operationKey() === key;
-const teamStore = useTeamStore();
-
-// ── State ──────────────────────────────────────
-const employes = computed(() => teamStore.employees);
-const typeDestinataire = ref<'individuel' | 'general'>('individuel');
-const employePreselectionne = ref<TeamEmployee | null>(null);
-const formulaire = ref<FormulaireMemo>({ destinataireId: '', type: '', titre: '', contenu: '' });
-const fichiers = ref<File[]>([]);
-const fileInput = ref<HTMLInputElement | null>(null);
-const isSubmitting = ref(false);
-const showConfigPanel = ref(true);
-const configurationTerminee = ref(false);
-const memosEnvoyes = ref<MemoEnvoye[]>([]);
-
-// Audio
-const isRecording = ref(false);
-const mediaRecorder = ref<MediaRecorder | null>(null);
-const audioChunks = ref<Blob[]>([]);
-const audioBlob = ref<Blob | null>(null);
-const audioURL = ref('');
-const recordingTime = ref('00:00');
-const recordingInterval = ref<number | null>(null);
-const recordingStartTime = ref(0);
-const recordedDuration = ref('00:00');
-const currentPlayingIndex = ref<number | null>(null);
-const isPlaying = ref(false);
-const currentAudioTime = ref('0:00');
-const audioElements = ref<Map<number, HTMLAudioElement>>(new Map());
-
-// ── Computed ───────────────────────────────────
-const userInitials = computed(() => userStore.userInitials || '?');
-const memoEnvoye = computed(() => memosEnvoyes.value.length > 0);
-
-const employeSelectionne = computed(() =>
-    employePreselectionne.value ?? employes.value.find(e => e.id === formulaire.value.destinataireId)
-);
-
-const headerTitle = computed(() => {
-  if (typeDestinataire.value === 'general') return 'Tous les employés';
-  if (employeSelectionne.value) return employeSelectionne.value.name;
-  return 'Sélectionner un employé';
-});
-
-const headerSubtitle = computed(() => getMemoTitle(formulaire.value.type) || 'Sélectionner un type');
-
-const MEMO_TYPE_OTHER = 'other' as const;
+const current = () => !disposed && session === memoStore.sessionKey;
+onUnmounted(() => { disposed = true; });
 
 const memoTitles = {
   delay_justification: 'Justification de retard',
-  absence_justification: "Justification d'absence",
-  other: 'Autres',
-} as const;
-
-const getMemoTitle = (type: string) => memoTitles[type as keyof typeof memoTitles] ?? '';
-
-const memoTypeOptions = computed(() =>
-    Object.entries(memoTitles).map(([value, label]) => ({ value, label }))
-);
-
-const configurationComplete = computed(() => {
-  const aDestinataire = typeDestinataire.value === 'general' || !!formulaire.value.destinataireId;
-  const aType = !!formulaire.value.type;
-  if (formulaire.value.type === MEMO_TYPE_OTHER) return aDestinataire && aType && !!formulaire.value.titre.trim();
-  return aDestinataire && aType;
+  absence_justification: 'Justification d’absence',
+  other: 'Autre',
+};
+const formulaire = ref({
+  destinataireId: '',
+  type: '',
+  titre: props.draft?.originalTitle ?? '',
+  contenu: props.draft?.memoContent?.[0]?.message?.filter(message => message.type === 'text')
+    .map(message => message.content).join('\n') ?? '',
 });
-
-const peutEnvoyer = computed(() => {
-  if (!configurationTerminee.value) return false;
-  return !!formulaire.value.contenu.trim() || audioBlob.value !== null;
-});
-
-const messagesFormatted = computed(() =>
-    memosEnvoyes.value.map((memo, index) => ({
-      id: `memo-${index}`,
-      type: 'sent' as const,
-      senderName: 'Manager',
-      senderInitials: userInitials.value,
-      timestamp: memo.timestamp,
-      content: memo.contenu,
-      attachments: memo.fichiers.map(f => ({
-        id: `file-${index}-${f.name}`,
-        name: f.name,
-        type: getFileType(f),
-        url: memo.audioURL || '',
-        duration: memo.duration,
-      })),
-    }))
-);
-
-// ── Methods ────────────────────────────────────
-const getFileType = (file: File) => {
-  if (file.type.startsWith('image/')) return 'image';
-  if (file.type.startsWith('audio/')) return 'audio';
-  if (file.type === 'application/pdf') return 'pdf';
-  return 'text';
+const employes = ref<MemoRecipient[]>([]);
+const chargement = ref(false);
+const isSubmitting = ref(false);
+const erreur = ref('');
+const erreurDestinataires = ref(false);
+const peutEnregistrer = computed(() => Boolean(formulaire.value.titre.trim() && formulaire.value.contenu.trim() &&
+  (props.draft || (formulaire.value.type && formulaire.value.destinataireId))));
+const definirTitre = () => {
+  const type = formulaire.value.type as keyof typeof memoTitles;
+  formulaire.value.titre = type === 'other' ? '' : memoTitles[type];
 };
 
-const chargerEmployes = async () => {
-  try { await teamStore.loadTeam(userStore.user?.guid!); }
-  catch (e) { console.error('❌ Erreur chargement employés:', e); }
-};
-
-const terminerConfiguration = () => {
-  if (!configurationComplete.value) return;
-  if (formulaire.value.type !== MEMO_TYPE_OTHER) formulaire.value.titre = getMemoTitle(formulaire.value.type);
-  configurationTerminee.value = true;
-  showConfigPanel.value = false;
-};
-
-const ajouterFichiers = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files) {
-    const total = fichiers.value.length + target.files.length + (audioBlob.value ? 1 : 0);
-    if (total > 8) { alert(`Maximum 8 fichiers autorisés`); return; }
-    fichiers.value.push(...Array.from(target.files));
-  }
-  if (target) target.value = '';
-};
-
-const removeFile = (index: number) => { fichiers.value.splice(index, 1); };
-
-// Audio recording
-const toggleRecording = async () => { isRecording.value ? stopRecording() : await startRecording(); };
-
-const startRecording = async () => {
-  const key = operationKey();
+async function chargerEmployes() {
+  chargement.value = true;
+  erreurDestinataires.value = false;
+  erreur.value = '';
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    if (!current(key)) { stream.getTracks().forEach(t => t.stop()); return; }
-    mediaRecorder.value = new MediaRecorder(stream);
-    audioChunks.value = [];
-    mediaRecorder.value.ondataavailable = e => { if (current(key)) audioChunks.value.push(e.data); };
-    mediaRecorder.value.onstop = () => {
-      stream.getTracks().forEach(t => t.stop());
-      if (!current(key)) return;
-      audioBlob.value = new Blob(audioChunks.value, { type: 'audio/webm' });
-      audioURL.value = URL.createObjectURL(audioBlob.value);
-      stream.getTracks().forEach(t => t.stop());
-    };
-    mediaRecorder.value.start();
-    isRecording.value = true;
-    recordingStartTime.value = Date.now();
-    recordingInterval.value = window.setInterval(() => {
-      const s = Math.floor((Date.now() - recordingStartTime.value) / 1000);
-      recordingTime.value = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-    }, 1000);
-  } catch { alert("Impossible d'accéder au microphone"); }
-};
-
-const stopRecording = () => {
-  if (!mediaRecorder.value || !isRecording.value) return;
-  mediaRecorder.value.stop();
-  isRecording.value = false;
-  if (recordingInterval.value) { clearInterval(recordingInterval.value); recordingInterval.value = null; }
-  recordedDuration.value = recordingTime.value;
-  recordingTime.value = '00:00';
-};
-
-const deleteRecording = () => {
-  if (audioURL.value) { URL.revokeObjectURL(audioURL.value); audioURL.value = ''; }
-  audioBlob.value = null;
-  audioChunks.value = [];
-  recordedDuration.value = '00:00';
-};
-
-const toggleAudioPlay = (audioId: string) => {
-  const index = parseInt(audioId.split('-')[1]);
-  const memo = memosEnvoyes.value[index];
-  if (!memo.audioURL) return;
-  if (currentPlayingIndex.value !== null && currentPlayingIndex.value !== index) {
-    audioElements.value.get(currentPlayingIndex.value)?.pause();
-  }
-  let audio = audioElements.value.get(index);
-  if (!audio) {
-    audio = new Audio(memo.audioURL);
-    audioElements.value.set(index, audio);
-    audio.addEventListener('timeupdate', () => {
-      const s = Math.floor(audio!.currentTime);
-      currentAudioTime.value = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-    });
-    audio.addEventListener('ended', () => { isPlaying.value = false; currentPlayingIndex.value = null; currentAudioTime.value = '0:00'; });
-  }
-  if (currentPlayingIndex.value === index && isPlaying.value) {
-    audio.pause(); isPlaying.value = false;
-  } else {
-    audio.play(); isPlaying.value = true; currentPlayingIndex.value = index;
-  }
-};
-
-const downloadAudioFromMessage = (fichier: any) => {
-  const a = document.createElement('a');
-  a.href = fichier.url;
-  a.download = fichier.name || 'audio.webm';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-};
-
-const soumettreMemo = async () => {
-  if (!peutEnvoyer.value || isSubmitting.value) return;
-  const key = operationKey();
-  const author = userStore.user?.guid || '';
-  isSubmitting.value = true;
-  try {
-    let uploadedFiles: UploadedAttachment[] = [];
-    if (fichiers.value.length > 0) uploadedFiles = await MemoService.uploadMultipleFiles(fichiers.value);
-    if (!current(key)) return;
-    if (audioBlob.value) uploadedFiles.push(await MemoService.uploadAudioBlob(audioBlob.value));
-
-    if (!current(key)) return;
-    const messageContent = MemoService.buildMessageContent(formulaire.value.contenu, uploadedFiles);
-    const payload: CreateMemo = {
-      user_author: author,
-      target_user: formulaire.value.destinataireId,
-      type: formulaire.value.type,
-      title: formulaire.value.titre,
-      message: messageContent,
-    };
-
-    const response = await MemoService.createMemo(payload);
-    if (!current(key)) return;
-    if (!response.success) throw new Error(response.error?.message || 'Erreur lors de la création');
-
-    const timeString = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    memosEnvoyes.value.push({
-      titre: formulaire.value.titre,
-      contenu: formulaire.value.contenu,
-      fichiers: [...fichiers.value],
-      audioBlob: audioBlob.value,
-      audioURL: audioBlob.value ? URL.createObjectURL(audioBlob.value) : null,
-      duration: recordedDuration.value,
-      timestamp: timeString,
-    });
-
-    formulaire.value.contenu = '';
-    fichiers.value = [];
-    audioBlob.value = null;
-    recordedDuration.value = '00:00';
-    if (audioURL.value) { URL.revokeObjectURL(audioURL.value); audioURL.value = ''; }
-
-    // Le parent rafraîchit uniquement le nouveau mémo. Le socket fera la même
-    // invalidation pour les autres sessions sans recharger toute la collection.
-    emit('created', response.data?.guid ?? response.data?.data?.guid ?? '');
-
-  } catch (error: any) {
-    if (!current(key)) return;
-    alert(error.message || 'Erreur lors de la création du mémo');
+    const recipients = await MemoService.recipients();
+    if (!current()) return;
+    employes.value = recipients;
+    if (recipients.some(person => person.guid === props.preselectedEmployeeGuid))
+      formulaire.value.destinataireId = props.preselectedEmployeeGuid!;
+  } catch (error) {
+    if (!current()) return;
+    erreurDestinataires.value = true;
+    erreur.value = memoReadErrorMessage(error, 'Impossible de charger les destinataires.');
   } finally {
-    if (!current(key)) return;
-    isSubmitting.value = false;
+    if (current()) chargement.value = false;
   }
-};
+}
+onMounted(() => { if (!props.draft) void chargerEmployes(); });
 
-// ── Watch / Lifecycle ──────────────────────────
-watch(() => formulaire.value.type, (newType) => {
-  if (newType !== MEMO_TYPE_OTHER) formulaire.value.titre = '';
-  configurationTerminee.value = false;
-});
-
-onMounted(async () => {
-  await chargerEmployes();
-  if (props.preselectedEmployeeGuid && props.preselectedEmployeeName) {
-    const found = employes.value.find(e => e.id === props.preselectedEmployeeGuid || e.guid === props.preselectedEmployeeGuid);
-    employePreselectionne.value = found ?? ({ id: props.preselectedEmployeeGuid, guid: props.preselectedEmployeeGuid, name: props.preselectedEmployeeName } as any);
-    formulaire.value.destinataireId = props.preselectedEmployeeGuid;
+let lastAttempt: { payload: string; id: string } | undefined;
+async function enregistrer() {
+  if (!peutEnregistrer.value || isSubmitting.value || !current()) return;
+  const { titre: title, contenu: text, type, destinataireId: targetGuid } = formulaire.value;
+  const command: MemoCommand = props.draft
+    ? { action: 'EDIT', guid: props.draft.guid, version: props.draft.version ?? null, title, text }
+    : { action: 'CREATE', targetGuid, type, title, text };
+  const payload = JSON.stringify(command);
+  if (lastAttempt?.payload !== payload) lastAttempt = { payload, id: crypto.randomUUID() };
+  isSubmitting.value = true;
+  erreur.value = '';
+  try {
+    const result = await MemoService.command(command, lastAttempt.id);
+    if (current()) emit('created', result.guid);
+  } catch (error) {
+    if (current()) erreur.value = memoReadErrorMessage(error, 'Impossible d’enregistrer le brouillon.');
+  } finally {
+    if (current()) isSubmitting.value = false;
   }
-});
-
-onUnmounted(() => {
-  disposed = true;
-  mediaRecorder.value?.stream.getTracks().forEach(t => t.stop());
-  audioChunks.value = [];
-  audioBlob.value = null;
-  fichiers.value = [];
-  if (recordingInterval.value) clearInterval(recordingInterval.value);
-  if (audioURL.value) URL.revokeObjectURL(audioURL.value);
-  audioElements.value.forEach(a => { a.pause(); a.src = ''; });
-  audioElements.value.clear();
-  memosEnvoyes.value.forEach(m => { if (m.audioURL) URL.revokeObjectURL(m.audioURL); });
-});
+}
 </script>
-
-<style scoped>
-.config-panel {
-  width: 320px;
-  max-width: 320px;
-  background: white;
-  border-left: 1px solid #e5e7eb;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  z-index: 20;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-.config-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f8f9fa;
-  flex-shrink: 0;
-}
-.config-panel-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: #1f2937; }
-.btn-close-panel {
-  width: 32px; height: 32px; min-width: 32px;
-  border-radius: 50%; background: transparent; border: none;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.2s ease-out; color: #6b7280;
-}
-.btn-close-panel:hover { background: rgba(220,53,69,0.1); color: #dc3545; transform: rotate(90deg); }
-.close-icon { width: 20px; height: 20px; }
-.config-panel-content { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; }
-.config-section { display: flex; flex-direction: column; gap: 0.75rem; }
-.config-section-title { margin: 0; font-size: 14px; font-weight: 600; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; }
-.form-select {
-  width: 100%; padding: 0.75rem 1rem; border: 2px solid #e5e7eb;
-  border-radius: 8px; font-size: 15px; font-family: inherit;
-  background: white; cursor: pointer; transition: all 0.2s ease-out;
-}
-.form-select:focus { outline: none; border-color: #004aad; }
-.btn-terminer {
-  width: 100%; display: flex; align-items: center; justify-content: center;
-  gap: 0.75rem; padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #004aad 0%, #0066cc 100%);
-  color: white; border: none; border-radius: 8px;
-  font-size: 16px; font-weight: 600; cursor: pointer;
-  transition: all 0.2s ease-out;
-  box-shadow: 0 4px 12px rgba(0,74,173,0.25);
-}
-.btn-terminer:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,74,173,0.35); }
-.btn-terminer:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.check-icon-btn { width: 20px; height: 20px; }
-.employe-preselectionne { display: flex; flex-direction: column; gap: 0.75rem; }
-.employe-info-card {
-  display: flex; align-items: center; gap: 1rem; padding: 1rem;
-  background: rgba(0,74,173,0.05); border: 2px solid #004aad; border-radius: 8px;
-}
-.employe-avatar-small {
-  width: 40px; height: 40px; min-width: 40px;
-  background: rgba(0,74,173,0.1); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-}
-.avatar-icon-small { width: 24px; height: 24px; color: #004aad; }
-.employe-text { flex: 1; }
-.employe-nom-selected { margin: 0; font-size: 16px; font-weight: 600; color: #1f2937; }
-.employe-label { margin: 4px 0 0 0; font-size: 13px; color: #6b7280; }
-.check-icon { width: 24px; height: 24px; color: #10b981; flex-shrink: 0; }
-.employe-note { margin: 0; font-size: 13px; color: #6b7280; font-style: italic; }
-input[type="text"] {
-  width: 100%; padding: 0.75rem 1rem; border: 2px solid #e5e7eb;
-  border-radius: 8px; font-size: 15px; font-family: inherit; transition: all 0.2s ease-out;
-}
-input[type="text"]:focus { outline: none; border-color: #004aad; }
-input.input-error { border-color: #dc3545; }
-.slide-enter-active, .slide-leave-active { transition: transform 0.3s ease-out; }
-.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
-</style>

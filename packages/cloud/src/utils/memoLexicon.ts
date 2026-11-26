@@ -32,3 +32,33 @@ export function formatMemoTitle(value: string): string {
   for (const [pattern, replacement] of titleReplacements) title = title.replace(pattern, replacement);
   return title;
 }
+
+const pointageLabels: Record<string, string> = {
+  clock_in: 'Arrivée', clock_out: 'Départ',
+  pause_start: 'Début de pause', pause_end: 'Fin de pause',
+  external_mission: 'Début de mission', external_mission_end: 'Fin de mission',
+  waypoint: 'Point de passage',
+};
+const correctionLabels: Record<string, string> = {
+  auto_close_previous_session: 'Clôture de la session précédente',
+  create_retroactive_session: 'Création rétroactive de la session',
+  auto_close_previous_pause: 'Clôture de la pause précédente',
+  auto_create_missing_session: 'Création de la session manquante',
+  auto_close_active_pause: 'Clôture de la pause en cours',
+  auto_create_session_for_mission: 'Création d’une session pour la mission',
+  auto_create_session_and_mission_for_mission_end: 'Création de la session et de la mission manquantes',
+  auto_create_mission_start: 'Création du début de mission manquant',
+};
+
+export function formatAutomaticMemoDetails(value: string): string {
+  if (/^\s*(?:\{|\[)/.test(value)) return '';
+  return formatMemoMessage(value
+    .replace(/^[ \t]*Détails:[ \t]*(?:\{[\s\S]*?^\}|\[[\s\S]*?^\]|[^\n]*)/gm, '')
+    .replace(/^.*RÉSOLUTION D'HORAIRE:[^\n]*\n[\s\S]*?(?=^🔍|$(?![\s\S]))/gm, '')
+    .replace(/^.*MÉMO AUTO-GÉNÉRÉ.*\n|^[ \t]*- (?:GPS|Précision):.*$/gm, '')
+    .replace(/(^[ \t]*- Type: )([a-z_]+)/gmi, (_, prefix, type) => prefix + (pointageLabels[type] ?? type))
+    .replace(/(^[ \t]*• )([a-z_]+)$/gm, (_, prefix, action) => prefix + (correctionLabels[action] ?? action))
+    .replace(/\[(LOW|MEDIUM|HIGH|CRITICAL)\]/g, (_, level) =>
+      ({ LOW: 'Faible', MEDIUM: 'Modérée', HIGH: 'Élevée', CRITICAL: 'Critique' })[level as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'])
+    .replace(/\n{3,}/g, '\n\n'));
+}

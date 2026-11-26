@@ -303,8 +303,11 @@
                 repos.
               </div>
 
+              <SuggestionPreflightAlert v-if="preflightDiagnostic" :diagnostic="preflightDiagnostic"
+                  :config-guid="readiness.activeConfig.value?.guid" :requirements="readiness.requirements.value" />
+
               <div
-                v-if="errorMessage"
+                v-else-if="errorMessage"
                 class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs leading-5 text-red-700"
               >
                 {{ errorMessage }}
@@ -369,7 +372,7 @@
               >
                 <IconLoader2 v-if="saving" :size="15" class="animate-spin" />
                 <IconSparkles v-else :size="15" />
-                {{ saving ? 'Calcul en cours…' : 'Générer la proposition' }}
+                {{ saving ? 'Calcul en cours…' : preflightDiagnostic ? 'Relancer la génération' : 'Générer la proposition' }}
               </button>
             </div>
           </footer>
@@ -401,6 +404,8 @@ import type {
   ScheduleSuggestion,
 } from '../planningSuggestion.type';
 import GenerationReadinessPanel from './GenerationReadinessPanel.vue';
+import SuggestionPreflightAlert from './SuggestionPreflightAlert.vue';
+import { readPreflightDiagnostic, type PreflightDiagnostic } from './preflightDiagnostics';
 import HistoryFairnessReview from './HistoryFairnessReview.vue';
 import TemporaryEmployeeExclusionPicker from './TemporaryEmployeeExclusionPicker.vue';
 
@@ -410,6 +415,7 @@ const router = useRouter();
 const titleId = `generate-suggestion-title-${Math.random().toString(36).slice(2, 9)}`;
 const saving = ref(false);
 const errorMessage = ref('');
+const preflightDiagnostic = ref<PreflightDiagnostic | null>(null);
 const periodFrom = ref('');
 const periodTo = ref('');
 const activePreset = ref('14-days');
@@ -476,6 +482,7 @@ watch(
   async (open) => {
     if (!open) return;
     errorMessage.value = '';
+    preflightDiagnostic.value = null;
     historyError.value = '';
     historyReview.value = null;
     historyAdjustments.value = [];
@@ -487,6 +494,7 @@ watch(
 );
 
 watch([periodFrom, periodTo, () => excludedEmployeeGuids.value.join('|')], () => {
+  preflightDiagnostic.value = null;
   // Any scope/date change invalidates the previous historical review.
   historyReview.value = null;
   historyAdjustments.value = [];
@@ -719,6 +727,7 @@ async function generate(): Promise<void> {
 
   saving.value = true;
   errorMessage.value = '';
+  preflightDiagnostic.value = null;
 
   try {
     const response = await ScheduleSuggestionService.generate(props.managerGuid, {
@@ -733,6 +742,8 @@ async function generate(): Promise<void> {
     if (!response?.success) throw response;
     emit('generated', response.data.suggestion);
   } catch (error: any) {
+    preflightDiagnostic.value = readPreflightDiagnostic(error);
+    if (preflightDiagnostic.value) return;
     const code = error?.error?.code ?? error?.code;
     errorMessage.value =
       code === 'SUGGESTION_GENERATION_FAILED'

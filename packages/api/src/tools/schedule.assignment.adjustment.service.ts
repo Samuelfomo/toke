@@ -19,7 +19,7 @@ type TemplatePlain = {
   deleted_at?: Date | null;
 };
 
-type AssignmentPlain = {
+export type AssignmentPlain = {
   id: number;
   guid: string;
   tenant: string;
@@ -96,7 +96,7 @@ export class ScheduleAdjustmentError extends Error {
 
 const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-function addDays(iso: string, amount: number): string {
+export function addDays(iso: string, amount: number): string {
   const date = new Date(`${iso}T00:00:00.000Z`);
   date.setUTCDate(date.getUTCDate() + amount);
   return date.toISOString().slice(0, 10);
@@ -386,8 +386,8 @@ function manualAdjustmentMeta(snapshot: any): any | null {
   return meta && meta.manual_override === true ? meta : null;
 }
 
-function assignmentOverlaps(data: AssignmentPlain, from: string, to: string): boolean {
-  return data.start_date <= to && (data.end_date === null || data.end_date >= from);
+function assignmentOverlaps(data: AssignmentPlain, from: string, to: string | null): boolean {
+  return (to === null || data.start_date <= to) && (data.end_date === null || data.end_date >= from);
 }
 
 async function createAssignmentClone(
@@ -428,12 +428,12 @@ async function createAssignmentClone(
  * ligne existante. Si la date se trouve au milieu d'une affectation directe,
  * la partie après l'ajustement est clonée afin de préserver le planning.
  */
-async function carveAssignmentPeriod(
+export async function carveAssignmentPeriod(
   AssignmentModel: any,
   instance: any,
   data: AssignmentPlain,
   from: string,
-  to: string,
+  to: string | null,
   transaction: Transaction,
 ): Promise<{
   deactivated?: string;
@@ -446,11 +446,13 @@ async function carveAssignmentPeriod(
   if (!assignmentOverlaps(data, from, to)) return {};
 
   const before = addDays(from, -1);
-  const after = addDays(to, 1);
+  const originalEnd = data.end_date;
+  const after = to !== null && (originalEnd === null || originalEnd > to)
+    ? addDays(to, 1)
+    : null;
   const hasBefore = data.start_date < from;
-  const hasAfter = data.end_date === null || data.end_date > to;
 
-  if (hasBefore && hasAfter) {
+  if (hasBefore && after) {
     // 1) Raccourcir d'abord la ligne existante : cela libère immédiatement la
     //    plage avant de créer le fragment de droite sous la contrainte EXCLUDE.
     await instance.update({ end_date: before }, { transaction });
@@ -459,7 +461,7 @@ async function carveAssignmentPeriod(
       AssignmentModel,
       data,
       after,
-      data.end_date,
+      originalEnd,
       transaction,
     );
 
@@ -483,7 +485,7 @@ async function carveAssignmentPeriod(
     };
   }
 
-  if (hasAfter) {
+  if (after) {
     await instance.update({ start_date: after }, { transaction });
 
     return {
@@ -505,7 +507,7 @@ async function carveAssignmentPeriod(
   return { deactivated: data.guid };
 }
 
-function isExclusionConstraintError(error: any): boolean {
+export function isExclusionConstraintError(error: any): boolean {
   return (
     error?.name === 'SequelizeExclusionConstraintError' ||
     error?.original?.code === '23P01' ||

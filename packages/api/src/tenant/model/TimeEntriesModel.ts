@@ -71,7 +71,7 @@ export default class TimeEntriesModel extends BaseModel {
   protected server_received_at?: Date;
   protected latitude?: number;
   protected longitude?: number;
-  protected gps_accuracy?: number;
+  protected gps_accuracy: number | null = null;
   protected qr_code?: number;
   protected device_info?: Record<string, any>;
   protected ip_address?: string;
@@ -932,7 +932,7 @@ export default class TimeEntriesModel extends BaseModel {
       throw new Error(TIME_ENTRIES_ERRORS.LONGITUDE_INVALID);
     }
 
-    if (this.gps_accuracy && !TimeEntriesValidationUtils.validateGpsAccuracy(this.gps_accuracy)) {
+    if (!TimeEntriesValidationUtils.validateGpsAccuracy(this.gps_accuracy)) {
       throw new Error(TIME_ENTRIES_ERRORS.GPS_ACCURACY_INVALID);
     }
 

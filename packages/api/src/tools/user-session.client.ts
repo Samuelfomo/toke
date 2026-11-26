@@ -9,9 +9,18 @@ const validUserGuid = (value: unknown): value is string => typeof value === 'str
 
 /** Service credentials and human proof travel separately. No dotenv or eager connection. */
 export class UserSessionClient {
-  constructor(private readonly url: string, private readonly key: string, private readonly secret: string) {
-    if (!url || !key || !secret) throw new SessionError(503, 'session_service_configuration_missing');
-    const parsed = new URL(url);
+  private readonly url: string;
+  private readonly key: string;
+  private readonly secret: string;
+
+  constructor(url: string, key: string, secret: string) {
+    this.url = url.trim();
+    this.key = key.trim();
+    this.secret = secret.trim();
+    if (!this.url || !this.key || !this.secret) throw new SessionError(503, 'session_service_configuration_missing');
+    let parsed: URL;
+    try { parsed = new URL(this.url); }
+    catch { throw new SessionError(503, 'session_service_configuration_invalid'); }
     if (!['https:', 'http:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash)
       throw new SessionError(503, 'session_service_configuration_invalid');
   }
@@ -31,6 +40,10 @@ export class UserSessionClient {
       // not proof that its user's session expired.
       let code: string | undefined;
       try { code = (await response.json())?.error?.code; } catch { /* Fail closed. */ }
+      if (action === 'introspect' &&
+          (code === 'session_service_unauthorized' || code === 'session_service_configuration_missing')) {
+        throw new SessionError(503, code);
+      }
       const status = response.status === 401 && ['invalid_user_session', 'session_account_unavailable'].includes(code || '') ? 401
         : response.status === 403 && code === 'tenant_session_mismatch' ? 403 : 503;
       throw new SessionError(status, status === 503 ? 'session_authority_unavailable' : 'invalid_user_session');

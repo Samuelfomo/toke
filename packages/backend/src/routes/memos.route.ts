@@ -15,11 +15,13 @@ import FormData from 'form-data';
 import { TenantConfig } from '../tools/tenant.config.js';
 import { memoManagerReads } from '../tools/memo-manager-reads.js';
 import { UserService } from '../services/user.service.js';
-import { MemoSocketBridgeService } from '../services/memo.socket.bridge.service.js';
 
 const router = Router();
 // Step A: authenticate all memo paths, then remain closed until D1–D7 are approved.
-router.use(TenantConfig.authenticate, TenantConfig.authenticateUser, memoManagerReads, (_req, res) => {
+router.use(TenantConfig.authenticate, (req, res, next) => {
+  if (res.locals.integratorDelegation) return next();
+  return TenantConfig.authenticateUser(req, res, next);
+}, memoManagerReads, (_req, res) => {
   res.status(503).json({ success: false, error: { code: 'memo_permissions_pending' } });
 });
 const upload = multer();
@@ -358,40 +360,6 @@ router.get(
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'validation_failed',
-        message: error.message,
-      });
-    }
-  },
-);
-
-/**
- * 🔌 Ticket BFF pour le canal temps réel des mémos.
- *
- * Le navigateur reçoit uniquement un ticket BFF. Le ticket Socket.IO de l'API
- * tenant reste côté serveur et sera utilisé par MemoSocketBridgeService.
- */
-router.post(
-  '/realtime-ticket',
-  TenantConfig.authenticate,
-  Ensure.post(),
-  async (req: Request, res: Response) => {
-    try {
-      const reference = (req as any).client.reference;
-      const userGuid = String(req.body?.user_guid || '');
-
-      if (!userGuid || !MemosValidationUtils.validateGuid(userGuid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: USERS_CODES.INVALID_GUID,
-          message: USERS_ERRORS.GUID_INVALID,
-        });
-      }
-
-      const realtime = await MemoSocketBridgeService.createBridgeTicket(reference, userGuid);
-
-      return R.handleSuccess(res, realtime);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'memo_realtime_ticket_failed',
         message: error.message,
       });
     }

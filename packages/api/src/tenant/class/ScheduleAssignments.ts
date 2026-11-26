@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import type { ClockInOptions } from '../database/clock-in.options.js';
 import { SAFamily, SCHEDULE_ASSIGNMENTS_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
@@ -187,7 +188,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   }
 
   getEndDate(): string | undefined {
-    return this.end_date;
+    return this.end_date ?? undefined;
   }
 
   getCreatedBy(): number | null | undefined {
@@ -262,7 +263,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this;
   }
 
-  setEndDate(endDate: string): ScheduleAssignments {
+  setEndDate(endDate: string | null): ScheduleAssignments {
     this.end_date = endDate;
     return this;
   }
@@ -380,38 +381,38 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     }
   }
 
-  async save(): Promise<void> {
+  async save(transaction?: Transaction): Promise<void> {
+    if (this.isNew()) {
+      await this.create(transaction);
+      return;
+    }
     try {
-      if (this.isNew()) {
-        await this.create();
-      } else {
-        const previousTemplate = this.session_template;
-        const newTemplate = this.new_template;
-        const previousVersion = this.version || this.initialVersion;
+      const previousTemplate = this.session_template;
+      const newTemplate = this.new_template;
+      const previousVersion = this.version || this.initialVersion;
 
-        const newVersion = previousVersion + this.initialVersion;
-        const modifiedBy = this.created_by!;
-        const createdBy = this.created_by!;
-        const reason = this.reason ? this.reason : undefined;
+      const newVersion = previousVersion + this.initialVersion;
+      const modifiedBy = this.created_by!;
+      const createdBy = this.created_by!;
+      const reason = this.reason ? this.reason : undefined;
 
-        if (newTemplate) {
-          const snapshot = await ScheduleAssignments.createTemplateSnapshot(newTemplate);
-          this.setSessionTemplate(snapshot);
-        }
-
-        await this.update();
-
-        if (newTemplate)
-          await this.logModification({
-            previousTemplate,
-            newTemplate,
-            previousVersion,
-            newVersion,
-            modifiedBy,
-            createdBy,
-            modificationReason: reason,
-          });
+      if (newTemplate) {
+        const snapshot = await ScheduleAssignments.createTemplateSnapshot(newTemplate);
+        this.setSessionTemplate(snapshot).setVersion(newVersion);
       }
+
+      await this.update();
+
+      if (newTemplate)
+        await this.logModification({
+          previousTemplate,
+          newTemplate: this.session_template,
+          previousVersion,
+          newVersion,
+          modifiedBy,
+          createdBy,
+          modificationReason: reason,
+        });
     } catch (error: any) {
       throw new Error(error.message || error);
     }

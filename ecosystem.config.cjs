@@ -39,6 +39,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 4892,
         API_TYPE: 'tenant',
+        MEMO_B1_MANAGER_WRITES: process.env.MEMO_B1_MANAGER_WRITES ?? '0',
+        MEMO_B2_PRODUCTION_MANAGER_READS: process.env.MEMO_B2_PRODUCTION_MANAGER_READS ?? '1',
         PLANNING_ORTOOLS_URL: 'http://127.0.0.1:8090',
       },
 
@@ -68,6 +70,7 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 4893,
+        MEMO_B2_PRODUCTION_MANAGER_READS: process.env.MEMO_B2_PRODUCTION_MANAGER_READS ?? '1',
       },
 
       error_file: './logs/backend-pm2-err.log',

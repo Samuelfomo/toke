@@ -1,7 +1,6 @@
-import { QueryTypes, Transaction } from 'sequelize';
+import { QueryTypes, Transaction, type Sequelize } from 'sequelize';
 import type { SessionPrincipal } from '../../tools/user-session.authority.js';
 import TenantManager from '../database/db.tenant-manager.js';
-import { MemoFoundationsPersistence } from '../persistence/memos/foundations.persistence.js';
 import {
   loadMemoOrganization,
   type MemoOrganization,
@@ -17,9 +16,27 @@ export class MemoReadError extends Error {
   }
 }
 export interface MemoReadSelection {
-  kind: 'list' | 'detail' | 'events' | 'statistics';
+  kind: 'list' | 'detail' | 'events' | 'statistics' | 'state' | 'mark-read';
   guid?: string;
+  seenAt?: unknown;
   filters?: Record<string, string>;
+}
+export type MemoReadPrincipal = Readonly<SessionPrincipal | {
+  kind: 'delegated-integrator';
+  userGuid: string;
+  tenantGuid: string;
+  subdomain: string;
+  auditRef: string;
+}>;
+
+export async function memoWritesAvailable(db: Sequelize, transaction: Transaction): Promise<boolean> {
+  if (process.env.MEMO_B1_MANAGER_WRITES !== '1') return false;
+  const [row] = await db.query<{ enabled: boolean }>(
+    `SELECT coalesce(has_function_privilege(to_regprocedure(
+      'public.toke_b1_write_memo(uuid,text,text,text,integer,text,bigint,jsonb,integer)'), 'EXECUTE'),false) AS enabled`,
+    { transaction, type: QueryTypes.SELECT },
+  );
+  return row?.enabled === true;
 }
 const statuses = ['submitted', 'pending', 'approved', 'rejected', 'revoked'];
 const types = [
@@ -85,26 +102,52 @@ function legacyContent(value: unknown): unknown[] {
  * validator_user, team/group membership and a resolver proposal grant no read. */
 export class MemoReadsService {
   static async read(
-    principal: Readonly<SessionPrincipal>,
+    principal: MemoReadPrincipal,
     selection: MemoReadSelection,
   ): Promise<unknown> {
     const db = TenantManager.getConnectionSync();
     if (
-      principal.v !== 2 ||
-      principal.kind !== 'manager' ||
-      principal.exp <= Math.floor(Date.now() / 1000) ||
+      (principal.kind === 'manager' &&
+        (principal.v !== 2 || principal.exp <= Math.floor(Date.now() / 1000))) ||
       principal.subdomain !== TenantManager.getCurrentTenant()
     )
       throw new MemoReadError(403, 'tenant_session_mismatch');
-    await MemoFoundationsPersistence.loadExisting(db);
-    return db.transaction(
+    const run = () => db.transaction(
       { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ },
       async (tx) => {
-        await db.query('SET TRANSACTION READ ONLY', { transaction: tx });
+        if (selection.kind !== 'mark-read')
+          await db.query('SET TRANSACTION READ ONLY', { transaction: tx });
+        // Both B1 profiles expose this marker to the runtime role. The SQL
+        // below checks access to the actual tables used by this read.
+        const [foundation] = await db.query<{ version: string }>(
+          'SELECT public.toke_b1_version() AS version',
+          { type: QueryTypes.SELECT, transaction: tx },
+        ).catch((error: unknown) => {
+          const databaseError = error as { parent?: { code?: string }; code?: string };
+          const code = databaseError?.parent?.code ?? databaseError?.code;
+          if (code === '42883' || code === '42501')
+            throw new MemoReadError(503, 'memo_b1_not_ready');
+          throw error;
+        });
+        if (foundation?.version !== 'b1-v1')
+          throw new MemoReadError(503, 'memo_b1_not_ready');
+        const writesEnabled = (selection.kind === 'list' || selection.kind === 'detail') &&
+          await memoWritesAvailable(db, tx);
+        const [receiptSchema] = await db.query<{ enabled: boolean }>(
+          `SELECT coalesce(has_table_privilege(to_regclass('public.tk_memo_reads'), 'SELECT')
+            AND has_table_privilege(to_regclass('public.tk_memo_reads'), 'INSERT')
+            AND has_table_privilege(to_regclass('public.tk_memo_reads'), 'UPDATE')
+            AND EXISTS (SELECT FROM pg_index WHERE indexrelid=to_regclass('public.uq_tk_memo_reads_memo_user')
+                AND indrelid=to_regclass('public.tk_memo_reads') AND indisvalid AND indisunique), false) AS enabled`,
+          { transaction: tx, type: QueryTypes.SELECT },
+        );
+        const receiptsEnabled = receiptSchema?.enabled === true;
         const organization = await loadMemoOrganization(db, tx, principal.tenantGuid);
         const actor = [...organization.people.values()].find((p) => p.guid === principal.userGuid);
         if (!actor || !organization.activePerson(actor.id))
           throw new MemoReadError(401, 'session_account_unavailable');
+        if (principal.kind === 'delegated-integrator' && !organization.manager(actor.id))
+          throw new MemoReadError(403, 'memo_manager_role_required');
         const f = selection.filters ?? {};
         for (const key of Object.keys(f)) if (!queryKeys.has(key)) invalid();
         if (f.supervisor !== undefined && f.supervisor !== actor.guid)
@@ -166,13 +209,42 @@ export class MemoReadsService {
           conditions.push('m.guid=$guid');
           bind.guid = selection.guid;
         }
-        const from = `FROM public.tk_memos m LEFT JOIN public.tk_memo_workflows w ON w.memo_id=m.id WHERE ${conditions.join(' AND ')}`;
+        const modified = 'coalesce(m.updated_at,m.created_at)';
+        const receiptJoin = receiptsEnabled ? 'LEFT JOIN public.tk_memo_reads r ON r.memo_id=m.id AND r.user_id=$actor' : '';
+        const unread = receiptsEnabled ? `(r.read_at IS NULL OR r.read_at<${modified})` : 'false';
+        const from = `FROM public.tk_memos m LEFT JOIN public.tk_memo_workflows w ON w.memo_id=m.id
+          ${receiptJoin} WHERE ${conditions.join(' AND ')}`;
         const query = <T extends object>(sql: string, extra: Record<string, unknown> = {}) =>
           db.query<T>(sql, {
             bind: { ...bind, ...extra },
             type: QueryTypes.SELECT,
             transaction: tx,
           });
+        if (selection.kind === 'state') {
+          const [state] = await query<{ revision: string; unreadTotal: number }>(
+            `SELECT count(*) FILTER (WHERE ${unread})::integer AS "unreadTotal",
+              count(*)::text || ':' || coalesce(sum(hashtextextended(
+                concat(m.id, ':', ${modified}, ':', w.version, ':', ${unread}), 0)::numeric),0)::text AS revision
+              ${from}`,
+          );
+          return state;
+        }
+        if (selection.kind === 'mark-read') {
+          if (!receiptsEnabled) throw new MemoReadError(503, 'memo_receipts_unavailable');
+          const seenAt = selection.seenAt;
+          if (typeof seenAt !== 'string' ||
+              !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?Z$/.test(seenAt) ||
+              !Number.isFinite(Date.parse(seenAt)) ||
+              new Date(seenAt).toISOString().slice(0, 19) !== seenAt.slice(0, 19)) invalid();
+          const [memo] = await query<{ id: number; seen_at: string }>(
+            `SELECT m.id, greatest(m.created_at,least($seenAt::timestamptz,${modified}))::text AS seen_at ${from}`,
+            { seenAt },
+          );
+          if (!memo) throw new MemoReadError(404, 'memo_not_found');
+          const { default: MemoReads } = await import('../class/MemoReads.js');
+          const readAt = await MemoReads._markRead(memo.id, actor.id, memo.seen_at, tx);
+          return { readAt };
+        }
         if (selection.kind === 'statistics') {
           const rows = await query<{ memo_status: string; memo_type: string; count: number }>(
             `SELECT m.memo_status,m.memo_type,count(*)::integer AS count ${from} GROUP BY m.memo_status,m.memo_type`,
@@ -189,7 +261,9 @@ export class MemoReadsService {
             by_type: rows,
           };
         }
-        const columns = `m.id,m.guid,m.author_user,m.target_user,m.validator_user,m.memo_status,m.memo_type,m.title,m.created_at,m.incident_datetime,m.auto_generated,
+        const columns = `m.id,m.guid,m.author_user,m.target_user,m.validator_user,m.memo_status,m.memo_type,m.title,m.created_at,m.updated_at,m.incident_datetime,m.auto_generated,
+        to_char(${modified} AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS seen_at,
+        ${receiptsEnabled ? 'r.read_at' : 'NULL'} AS read_at, ${receiptsEnabled ? 'NOT ' + unread : 'true'} AS is_read,
         w.responsible_user_id,w.responsibility_reason,w.history_completeness,w.decision_cycle::text,w.version::text,(${responsibilityState}) AS responsibility_state`;
         if (selection.kind === 'list') {
           const [{ total }] = await query<{ total: number }>(
@@ -201,7 +275,9 @@ export class MemoReadsService {
             { limit, offset },
           );
           return {
-            memos: rows.map((row) => this.present(row, organization, actor)),
+            memos: rows.map((row) => this.present(row, organization, actor, writesEnabled)),
+            writesEnabled: writesEnabled && organization.manager(actor.id),
+            receiptsEnabled,
             total,
             offset,
             limit,
@@ -233,20 +309,41 @@ export class MemoReadsService {
         }
         return {
           memo: {
-            ...this.present(row, organization, actor),
+            ...this.present(row, organization, actor, writesEnabled),
             details: row.details,
             exchanges: legacyContent(row.memo_content),
+            receiptsEnabled,
           },
           history_completeness: row.history_completeness ?? 'LEGACY_INCOMPLETE',
         };
       },
     );
+    try {
+      return await run();
+    } catch (error) {
+      if (selection.kind !== 'mark-read' ||
+          (error as { parent?: { code?: string } })?.parent?.code !== '40001') throw error;
+      return run();
+    }
   }
   private static present(
     row: Record<string, any>,
     org: MemoOrganization,
     actor: MemoPerson,
+    writesEnabled: boolean,
   ): Record<string, unknown> {
+    const participant = (id: number) => {
+      const person = org.people.get(id);
+      if (!person || person.tenant !== actor.tenant) return null;
+      return { guid: person.guid, first_name: person.first_name ?? '', last_name: person.last_name ?? '' };
+    };
+    const author = participant(row.author_user);
+    const target = participant(row.target_user);
+    const canWrite = writesEnabled && org.manager(actor.id);
+    const authorIsActor = row.author_user === actor.id;
+    const responsible = row.responsibility_state === 'ASSIGNED' && row.responsible_user_id === actor.id;
+    const open = ['pending', 'submitted'].includes(row.memo_status);
+    const draft = row.memo_status === 'pending' && row.history_completeness === 'COMPLETE_SINCE_B';
     const responsibility = row.responsibility_state;
     const relation =
       row.author_user === actor.id
@@ -262,10 +359,16 @@ export class MemoReadsService {
       memo_type: row.memo_type,
       title: row.title,
       created_at: row.created_at,
+      updated_at: row.updated_at,
+      seen_at: row.seen_at,
+      read_at: row.read_at,
+      is_read: row.is_read,
       incident_datetime: row.incident_datetime,
       auto_generated: row.auto_generated,
-      author_guid: org.people.get(row.author_user)?.guid ?? null,
-      target_guid: org.people.get(row.target_user)?.guid ?? null,
+      author_guid: author?.guid ?? null,
+      target_guid: target?.guid ?? null,
+      author_user: author,
+      target_user: target,
       responsibility: {
         state: responsibility,
         responsible_guid: org.people.get(row.responsible_user_id)?.guid ?? null,
@@ -280,10 +383,14 @@ export class MemoReadsService {
       access_relation: relation,
       capabilities: {
         read: true,
-        comment: false,
+        comment: canWrite && open && !draft && (authorIsActor || row.target_user === actor.id || responsible),
+        edit: canWrite && draft && authorIsActor && !row.auto_generated,
+        submit: canWrite && draft && authorIsActor && !row.auto_generated,
         reopen: false,
-        validate: false,
-        reject: false,
+        validate: canWrite && open && responsible,
+        reject: canWrite && open && responsible,
+        revoke: canWrite && ((open && authorIsActor && !row.auto_generated) ||
+          (['approved', 'rejected'].includes(row.memo_status) && responsible && row.validator_user === actor.id)),
         correct: false,
         transfer: false,
         media: false,

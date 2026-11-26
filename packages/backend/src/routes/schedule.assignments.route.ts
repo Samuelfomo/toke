@@ -238,9 +238,21 @@ router.post('/adjustments', TenantConfig.authenticate, Ensure.post(), async (req
 /** POST /schedule-assignments */
 router.post('/', TenantConfig.authenticate, Ensure.post(), async (req, res) => {
   try {
+    const auth = req.header('authorization') ?? '';
+    const context = req.header('x-integrator-context');
+    let proof: Record<string, string> | undefined;
+    if (context && res.locals.integratorDelegation) {
+      const token = /^Bearer ([A-Za-z0-9_-]+)$/.exec(auth)?.[1];
+      if (token) proof = { 'x-toke-integrator-session': token, 'x-integrator-context': context };
+    } else if (!context) {
+      const token = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(auth)?.[1];
+      if (token) proof = { 'x-toke-user-session': token };
+    }
+
     const result = await ScheduleAssignmentService.saveScheduleAssignment(
       getClientReference(req),
       req.body,
+      proof,
     );
     return forwardResult(res, result);
   } catch (error: any) {

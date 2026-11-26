@@ -472,6 +472,10 @@ export interface SuggestionRollingHorizon {
 }
 
 export interface SuggestionDiagnostics {
+    apiPreflight?: {
+        warningCount?: number
+        warnings?: Array<{ message: string; date?: string; requirementGuid?: string }>
+    }
     violations: SuggestionViolation[]
     coverage: SuggestionCoverage[]
     guardPools?: SuggestionGuardPool[]

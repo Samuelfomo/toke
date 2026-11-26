@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import { TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
@@ -106,7 +107,7 @@ export default class ScheduleAssignmentsLogModel extends BaseModel {
   // CRUD (création uniquement, pas de modification/suppression)
   // ============================================
 
-  protected async create(): Promise<void> {
+  protected async create(transaction?: Transaction): Promise<void> {
     const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
       throw new Error('Failed to generate GUID for Schedule Assignments Logs');
@@ -124,7 +125,7 @@ export default class ScheduleAssignmentsLogModel extends BaseModel {
       [this.db.modification_reason]: this.modification_reason ?? null,
       [this.db.changed_fields]: this.changed_fields ?? null,
       [this.db.created_at]: this.created_at ?? TimezoneConfigUtils.getCurrentTime(),
-    });
+    }, { transaction });
 
     if (!lastID) {
       throw new Error('Failed to create Schedule Assignments Logs');

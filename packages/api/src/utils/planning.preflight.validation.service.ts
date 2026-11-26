@@ -1,4 +1,4 @@
-import type { PlanningSolverLockedAssignment } from './solver/planning.solver.js';
+import type { PlanningSolverBoundaryState, PlanningSolverLockedAssignment } from './solver/planning.solver.js';
 import type { FixedAlternationSolverPolicy, FixedAlternationStatus } from './planning.fixed.alternation.js';
 import type {
   DayKey,
@@ -24,13 +24,16 @@ export type PlanningPreflightIssueCode =
   | 'PREFLIGHT_WEEKLY_LEAVE_SELECTOR_EMPTY'
   | 'PREFLIGHT_WEEKLY_LEAVE_CAPACITY_INSUFFICIENT'
   | 'PREFLIGHT_WEEKLY_LEAVE_SCOPE_EMPTY'
+  | 'PREFLIGHT_DAILY_WORK_CAPACITY_INSUFFICIENT'
+  | 'PREFLIGHT_WEEKLY_WORK_CAPACITY_INSUFFICIENT'
   | 'PREFLIGHT_DAILY_REST_CAPACITY_INSUFFICIENT'
   | 'PREFLIGHT_WEEKLY_REST_CAPACITY_INSUFFICIENT';
 
 export type PlanningPreflightWarningCode =
   | 'PREFLIGHT_TARGET_ABOVE_STATIC_CAPACITY'
   | 'PREFLIGHT_NEAR_DAILY_CAPACITY'
-  | 'PREFLIGHT_FIXED_ALTERNATION_NOT_APPLIED';
+  | 'PREFLIGHT_FIXED_ALTERNATION_NOT_APPLIED'
+  | 'PREFLIGHT_WEEKLY_LEAVE_SCOPE_UNVERIFIED';
 
 export interface PlanningPreflightIssue {
   code: PlanningPreflightIssueCode;
@@ -69,6 +72,8 @@ export interface PlanningPreflightInput {
   fixedAlternationStatus?: FixedAlternationStatus;
   fixedAlternationPolicy?: FixedAlternationSolverPolicy;
   lockedAssignments?: PlanningSolverLockedAssignment[];
+  boundaryState?: PlanningSolverBoundaryState;
+  configGuid?: string;
 }
 
 export const FIXED_ALTERNATION_MESSAGES: Record<FixedAlternationStatus, string> = {
@@ -338,10 +343,171 @@ function validateRequirementStructure(
   }
 }
 
-export function validatePlanningPreflight(input: PlanningPreflightInput): PlanningPreflightReport {
+/**
+ * Bound work capacity from above, without guessing pool membership. A deficit
+ * in this relaxation is sufficient to disprove feasibility. Spare capacity is
+ * inconclusive because the same employees may compete for it.
+ */
+function validateRequiredWorkCapacity(
+  input: PlanningPreflightInput, dates: string[], poolWeeks: Set<string>,
+): PlanningPreflightIssue[] {
+  const leave = input.config.weeklyLeavePolicy;
+  const pool = input.config.guardTeamPolicy;
+  if (leave.mode !== 'PER_ELIGIBLE_EMPLOYEE' || leave.countMode !== 'EXACT' ||
+      !leave.requireWorkOnOtherDays || !leave.selector.planningModes.includes('ROTATING')) return [];
+
+  const rotating = new Set(input.employees.filter(employee => employee.mode === 'ROTATING').map(employee => employee.guid));
+  const included = new Set(input.employees.filter(employee => employee.mode !== 'EXCLUDED').map(employee => employee.guid));
+  const alternating = input.fixedAlternationPolicy;
+  const limited = alternating?.limitedServiceTemplateGuid;
+  const pinnedFixedOnLimitedService = input.employees.filter(employee =>
+    employee.mode === 'FIXED' && employee.fixedRestDayMode === 'TEMPLATE' &&
+    !leave.selector.planningModes.includes('FIXED') && !alternating?.employeeGuids.includes(employee.guid) &&
+    employee.fixedTemplate?.guid === limited && employee.fixedTemplate !== null);
+  const recoveryDays = input.config.restAfterGuardRequired ? input.config.postGuardRestDays : 0;
+  const locks = input.lockedAssignments ?? [];
+  const byDate = new Map(dates.map(date => [date, input.requirements.filter(requirement =>
+    requirement.dayOfWeek === dayKey(date) && requirement.eligibility.planningModes.includes('ROTATING'))]));
+  const issues: PlanningPreflightIssue[] = [];
+
+  for (const [weekFrom, weekDates] of weekGroups(dates)) {
+    if (leave.completeWeeksOnly && weekDates.length !== 7) continue;
+    const active = poolWeeks.has(weekFrom);
+    const members = active ? pool.employeesPerWeek : 0;
+    if (members > rotating.size) continue;
+
+    const selector = leave.selector.guardPoolRelation;
+    const populations = selector === 'ANY'
+      ? [{ relation: 'ANY', count: rotating.size }, ...(active ? [
+        { relation: 'MEMBER', count: members }, { relation: 'NON_MEMBER', count: rotating.size - members },
+      ] : [])]
+      : [{ relation: selector, count: selector === 'MEMBER' ? members : rotating.size - members }];
+
+    for (const { relation, count } of populations) {
+      if (!count) continue;
+      const dayBounds = weekDates.map(date => {
+        const requirements = (byDate.get(date) ?? []).filter(requirement => {
+          if (!scopeMatchesRequirement(requirement, leave.serviceScope)) return false;
+          const eligibility = requirement.eligibility.guardPoolRelation;
+          if (eligibility === 'MEMBER' && (!active || relation === 'NON_MEMBER')) return false;
+          if (eligibility === 'NON_MEMBER' && relation === 'MEMBER') return false;
+          if (active && relation === 'NON_MEMBER' && requirement.serviceType === 'GUARD') return false;
+          return !(active && relation === 'MEMBER' && pool.memberServiceAccess === 'GUARD_ONLY' &&
+            requirement.serviceType === 'STANDARD');
+        });
+        const dateLocks = locks.filter(lock => lock.date === date);
+        const unlockedRotationCapacity = (requirement: PlanningRequirementInput) => {
+          const maximum = hardMaximum(requirement);
+          if (maximum == null) return count;
+          const locked = new Set(dateLocks.filter(lock => rotating.has(lock.employeeGuid) &&
+            lock.requirementGuid === requirement.guid).map(lock => lock.employeeGuid)).size;
+          return Math.max(0, maximum - locked);
+        };
+        const regular = requirements.filter(requirement => requirement.template.guid !== limited)
+          .reduce((sum, requirement) => sum + unlockedRotationCapacity(requirement), 0);
+        const limitedOccupied = dateLocks.some(lock => included.has(lock.employeeGuid) && lock.templateGuid === limited) ||
+          pinnedFixedOnLimitedService.some(employee => !dateLocks.some(lock => lock.employeeGuid === employee.guid) &&
+            templateHasWork(employee.fixedTemplate, date));
+        const limitedCapacity = limited && !limitedOccupied
+          ? Math.min(1, requirements.filter(requirement => requirement.template.guid === limited)
+            .reduce((sum, requirement) => sum + unlockedRotationCapacity(requirement), 0))
+          : 0;
+
+        // A direct lock bypasses work-on-other-days. Continuation and recovery
+        // also satisfy that rule, even when their template is outside its scope.
+        let alternatives = new Set(dateLocks.filter(lock => rotating.has(lock.employeeGuid))
+          .map(lock => lock.employeeGuid)).size;
+        alternatives += input.boundaryState ? new Set(input.boundaryState.guardContinuations
+          .filter(entry => rotating.has(entry.employeeGuid) && entry.continuationDate <= date &&
+            addDays(entry.continuationDate, recoveryDays) >= date).map(entry => entry.employeeGuid)).size
+          : Number(date <= addDays(input.periodFrom, recoveryDays)) * count;
+
+        for (let offset = 1; offset <= recoveryDays + 1; offset++) {
+          const source = addDays(date, -offset);
+          for (const guard of byDate.get(source) ?? []) {
+            if (guard.serviceType !== 'GUARD' || (offset === 1 && guard.continuationDayOffset !== 1)) continue;
+            const guardLocks = locks.filter(lock => lock.date === source && lock.requirementGuid === guard.guid &&
+              rotating.has(lock.employeeGuid)).length;
+            // A non-member cannot start an automatic guard in this same
+            // pool week; a previous week's pool may have a different roster.
+            const samePoolExcludes = active && relation === 'NON_MEMBER' && mondayOfWeek(source) === weekFrom;
+            alternatives += samePoolExcludes ? guardLocks : Math.max(hardMaximum(guard) ?? count, guardLocks);
+          }
+        }
+        const ordinary = Math.min(count, regular + alternatives);
+        return {
+          date, ordinary, limited: Math.min(count - ordinary, limitedCapacity),
+          alternativeCapacity: Math.min(count, alternatives),
+          requirements,
+        };
+      });
+
+      let violation: { days: typeof dayBounds; required: number; capacity: number; deficit: number } | undefined;
+      // Check single days, the complete week and constrained subsets. There
+      // are at most 127 non-empty subsets of a civil week.
+      for (let mask = 1; mask < (1 << dayBounds.length); mask++) {
+        const days = dayBounds.filter((_, index) => mask & (1 << index));
+        const allowed = days.filter(day => leave.allowedDays.includes(dayKey(day.date))).length;
+        const maxLeaves = Math.min(count * leave.daysPerEmployee, allowed * Math.min(count, leave.maxEmployeesPerDay ?? count));
+        const required = Math.max(0, count * days.length - maxLeaves);
+        const capacity = days.reduce((sum, day) => sum + day.ordinary, 0) +
+          Math.min(count, days.reduce((sum, day) => sum + day.limited, 0));
+        const deficit = required - capacity;
+        if (deficit > 0 && (!violation || deficit > violation.deficit ||
+          (deficit === violation.deficit && days.length > violation.days.length))) {
+          violation = { days, required, capacity, deficit };
+        }
+      }
+      if (!violation) continue;
+      const { days, required, capacity, deficit } = violation;
+      const requirementGuids = [...new Set(days.flatMap(day => day.requirements.map(requirement => requirement.guid)))];
+      issues.push({
+        code: days.length === 1 ? 'PREFLIGHT_DAILY_WORK_CAPACITY_INSUFFICIENT' : 'PREFLIGHT_WEEKLY_WORK_CAPACITY_INSUFFICIENT',
+        weekFrom,
+        ...(days.length === 1 && { date: days[0]!.date }),
+        requirementGuids,
+        message: `Le travail obligatoire demande ${required} affectation(s), mais la capacité est d’au plus ${capacity}.`,
+        details: {
+          configGuid: input.configGuid,
+          periodFrom: days[0]!.date, periodTo: days.at(-1)!.date,
+          dates: days.map(day => day.date),
+          population: { planningMode: 'ROTATING', guardPoolRelation: relation, eligibleEmployees: count },
+          requiredAssignments: required, maximumAssignments: capacity, deficit,
+          weeklyLeave: { daysPerEmployee: leave.daysPerEmployee, allowedDays: leave.allowedDays, maxEmployeesPerDay: leave.maxEmployeesPerDay },
+          serviceScope: leave.serviceScope,
+          ...(limited && { serviceQuota: { templateGuid: limited, maxPerDate: 1, maxPerEmployeePerWeek: 1 } }),
+          dailyCapacity: days.map(day => ({
+            date: day.date, ordinaryCapacity: day.ordinary, quotaCapacity: day.limited,
+            alternativeCapacity: day.alternativeCapacity,
+            requirements: day.requirements.map(requirement => ({
+              guid: requirement.guid, templateGuid: requirement.template.guid, maximum: hardMaximum(requirement),
+            })),
+          })),
+          suggestedActions: [
+            {
+              code: 'REVIEW_SERVICE_MAXIMA',
+              message: `Libérer au moins ${deficit} affectation(s) sur les dates concernées en réexaminant les plafonds des services admissibles.`,
+              minimumAdditionalSlots: deficit, requirementGuids, requiresRevalidation: true,
+            },
+            { code: 'REVIEW_WEEKLY_LEAVE_POLICY', message: 'Réexaminer les jours de repos autorisés, la taille du pool ou l’obligation de travail hors repos.', requiresRevalidation: true },
+          ],
+        },
+      });
+    }
+  }
+  return issues;
+}
+
+export function validatePlanningPreflight(input: PlanningPreflightInput, options: { workCapacityOnly?: boolean } = {}): PlanningPreflightReport {
   const dates = periodDates(input.periodFrom, input.periodTo);
   const issues: PlanningPreflightIssue[] = [];
   const warnings: PlanningPreflightWarning[] = [];
+  const poolWeeks = activePoolWeeks(dates, input.requirements, input.config);
+  issues.push(...validateRequiredWorkCapacity(input, dates, poolWeeks));
+  if (options.workCapacityOnly) {
+    return { valid: !issues.length, checkedDates: dates.length, checkedRequirements: input.requirements.length,
+      issueCount: issues.length, warningCount: 0, issues, warnings };
+  }
   if (input.fixedAlternationStatus) {
     warnings.push({
       code: 'PREFLIGHT_FIXED_ALTERNATION_NOT_APPLIED',
@@ -351,7 +517,6 @@ export function validatePlanningPreflight(input: PlanningPreflightInput): Planni
   }
   const rotating = input.employees.filter((employee) => employee.mode === 'ROTATING');
   const fixed = input.employees.filter((employee) => employee.mode === 'FIXED');
-  const poolWeeks = activePoolWeeks(dates, input.requirements, input.config);
 
   const alternating = input.fixedAlternationPolicy;
   const capacityEmployees = alternating
@@ -369,7 +534,10 @@ export function validatePlanningPreflight(input: PlanningPreflightInput): Planni
     return alternatingEmployees.filter(employee => {
       const lock = locks.get(`${employee.guid}|${iso}`);
       if (lock) return lock.templateGuid === target.guid;
-      return !mandatory && templateHasWork(employee.fixedTemplate, iso) && templateHasWork(target, iso);
+      const weekendTarget = alternating?.limitedServiceTemplateGuid &&
+        target.guid !== alternating.limitedServiceTemplateGuid &&
+        ['Sat', 'Sun'].includes(dayKey(iso));
+      return !mandatory && (weekendTarget || templateHasWork(employee.fixedTemplate, iso)) && templateHasWork(target, iso);
     }).length;
   };
   const mandatoryCapacity = (requirement: PlanningRequirementInput, iso: string) =>
@@ -762,10 +930,9 @@ export function validatePlanningPreflight(input: PlanningPreflightInput): Planni
         scopeMatchesRequirement(requirement, leave.serviceScope),
       )
     ) {
-      issues.push({
-        code: 'PREFLIGHT_WEEKLY_LEAVE_SCOPE_EMPTY',
-        message:
-          'Weekly leave requires work on other days, but its service scope matches no active requirement.',
+      warnings.push({
+        code: 'PREFLIGHT_WEEKLY_LEAVE_SCOPE_UNVERIFIED',
+        message: 'Aucun besoin actif ne correspond au périmètre du travail obligatoire. Les horaires fixes et les exceptions peuvent néanmoins couvrir ce périmètre.',
         details: { serviceScope: leave.serviceScope },
       });
     }

@@ -322,7 +322,8 @@ router.post(
               .setPointageType(PointageType.CLOCK_IN)
               .setClockedAt(new Date(validatedData.clocked_at))
               .setFallbackCheckIn(validatedData.is_fallback_checkin)
-              .setCoordinates(validatedData.latitude, validatedData.longitude);
+              .setCoordinates(validatedData.latitude, validatedData.longitude)
+              .setGpsAccuracy(validatedData.gps_accuracy ?? null);
 
             if (validatedData.device_info) {
               entryObj.setDeviceInfo(validatedData.device_info);
@@ -439,7 +440,8 @@ router.post(
               .setPointageType(PointageType.PAUSE_START)
               .setClockedAt(new Date(validatedData.clocked_at))
               .setFallbackCheckIn(validatedData.is_fallback_checkin)
-              .setCoordinates(validatedData.latitude, validatedData.longitude);
+              .setCoordinates(validatedData.latitude, validatedData.longitude)
+              .setGpsAccuracy(validatedData.gps_accuracy ?? null);
 
             if (validatedData.image_url) {
               tempEntry.setImageUrl(validatedData.image_url);
@@ -534,7 +536,8 @@ router.post(
               .setPointageType(PointageType.PAUSE_END)
               .setClockedAt(new Date(validatedData.clocked_at))
               .setFallbackCheckIn(validatedData.is_fallback_checkin)
-              .setCoordinates(validatedData.latitude, validatedData.longitude);
+              .setCoordinates(validatedData.latitude, validatedData.longitude)
+              .setGpsAccuracy(validatedData.gps_accuracy ?? null);
 
             if (validatedData.image_url) {
               tempEntry.setImageUrl(validatedData.image_url);
@@ -639,7 +642,8 @@ router.post(
               .setPointageType(PointageType.CLOCK_OUT)
               .setClockedAt(new Date(validatedData.clocked_at))
               .setFallbackCheckIn(validatedData.is_fallback_checkin)
-              .setCoordinates(validatedData.latitude, validatedData.longitude);
+              .setCoordinates(validatedData.latitude, validatedData.longitude)
+              .setGpsAccuracy(validatedData.gps_accuracy ?? null);
 
             if (validatedData.image_url) {
               entryObj.setImageUrl(validatedData.image_url);
@@ -763,7 +767,8 @@ router.post(
               .setPointageType(PointageType.EXTERNAL_MISSION)
               .setClockedAt(new Date(validatedData.clocked_at))
               .setFallbackCheckIn(validatedData.is_fallback_checkin)
-              .setCoordinates(validatedData.latitude, validatedData.longitude);
+              .setCoordinates(validatedData.latitude, validatedData.longitude)
+              .setGpsAccuracy(validatedData.gps_accuracy ?? null);
 
             if (validatedData.device_info) {
               entryObj.setDeviceInfo(validatedData.device_info);
@@ -845,7 +850,8 @@ router.post(
               .setPointageType(PointageType.EXTERNAL_MISSION_END)
               .setClockedAt(new Date(validatedData.clocked_at))
               .setFallbackCheckIn(validatedData.is_fallback_checkin)
-              .setCoordinates(validatedData.latitude, validatedData.longitude);
+              .setCoordinates(validatedData.latitude, validatedData.longitude)
+              .setGpsAccuracy(validatedData.gps_accuracy ?? null);
 
             if (validatedData.device_info) {
               entryObj.setDeviceInfo(validatedData.device_info);
@@ -1051,11 +1057,8 @@ router.post(
         .setDevice(deviceObj.getId()!)
         .setPointageType(PointageType.WAYPOINT)
         .setClockedAt(new Date(validatedData.clocked_at))
-        .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-      if (validatedData.gps_accuracy) {
-        entryObj.setGpsAccuracy(validatedData.gps_accuracy);
-      }
+        .setCoordinates(validatedData.latitude, validatedData.longitude)
+        .setGpsAccuracy(validatedData.gps_accuracy ?? null);
 
       if (siteId) {
         entryObj.setSite(siteId);

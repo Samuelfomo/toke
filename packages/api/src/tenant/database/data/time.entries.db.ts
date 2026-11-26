@@ -156,7 +156,7 @@ export const TimeEntriesDbStructure = {
       allowNull: true,
       validate: {
         isInt: true,
-        min: 1,
+        min: 0,
         max: 2147483647,
       },
       comment: 'Geolocation accuracy',

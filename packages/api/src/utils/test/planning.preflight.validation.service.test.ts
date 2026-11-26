@@ -252,3 +252,87 @@ console.log('planning.preflight.validation.service.test.ts: OK');
     lockedAssignments: [{ employeeGuid: 'E2', date: '2026-12-07', templateGuid: null, requirementGuid: null }],
   }).valid, false);
 }
+
+{
+  // Four non-members must cover six days each. The restricted service can
+  // supply at most four assignments over the week, even with seven daily slots.
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+  const early = { guid: 'early', name: 'Early', definition: Object.fromEntries(days.map(day => [day, work('08:00', '16:00')])) };
+  const limited = { guid: 'limited', name: 'Limited', definition: Object.fromEntries(days.map(day => [day, work('10:30', '18:00')])) };
+  const guard = guardRequirement('Mon', 3);
+  const settings = config();
+  Object.assign(settings.guardTeamPolicy, { mode: 'WEEKLY_POOL', selectionMode: 'OPTIMIZED', employeesPerWeek: 6 });
+  Object.assign(settings.weeklyLeavePolicy, {
+    mode: 'PER_ELIGIBLE_EMPLOYEE', requireWorkOnOtherDays: true, allowedDays: ['Fri', 'Sat', 'Sun'],
+    maxEmployeesPerDay: 2, selector: { planningModes: ['ROTATING'], guardPoolRelation: 'NON_MEMBER' },
+    serviceScope: { mode: 'TEMPLATE', templateGuids: ['early', 'limited'], serviceTypes: [], requirementGuids: [], exclusive: true },
+  });
+  const guards: PlanningRequirementInput[] = days.map((day, index) => ({
+    ...guard, guid: `guard-${day}`, dayOfWeek: day,
+    template: { ...guard.template, definition: { [day]: work('16:00', '23:59') } },
+    continuationTemplate: { ...guard.continuationTemplate!, definition: {
+      [days[(index + 1) % days.length]!]: work('00:00', '08:00'),
+    } },
+  }));
+  const requirements: PlanningRequirementInput[] = [...guards, ...days.flatMap((day, index) =>
+    [early, limited].map(template => ({
+      ...standardRequirement(0), guid: `${template.guid}-${day}`, dayOfWeek: day,
+      allocationMode: 'RANGE' as const, template,
+      maxEmployees: template === early ? (index < 4 ? 3 : 2) : 1,
+      eligibility: { planningModes: ['ROTATING' as const], guardPoolRelation: 'NON_MEMBER' as const },
+    })))];
+  const input = {
+    employees: [...Array.from({ length: 10 }, (_, index) => employee(index + 1)),
+      { ...employee(11), mode: 'FIXED' as const, fixedTemplate: limited },
+      { ...employee(12), mode: 'FIXED' as const, fixedTemplate: early }],
+    requirements, config: settings, configGuid: 'config',
+    periodFrom: '2026-11-30', periodTo: '2026-12-06',
+    fixedAlternationPolicy: {
+      employeeGuids: ['E11', 'E12'] as [string, string],
+      templates: [limited, early] as [typeof limited, typeof early],
+      anchorDate: '2026-11-21', shiftCadenceDays: 1,
+      weekendRest: 'ALTERNATE_SAT_SUN' as const, limitedServiceTemplateGuid: 'limited',
+    },
+    boundaryState: { guardContinuations: [] },
+  };
+  const report = validatePlanningPreflight(input);
+  const issue = report.issues.find(entry => entry.code === 'PREFLIGHT_WEEKLY_WORK_CAPACITY_INSUFFICIENT');
+  assert.equal(report.valid, false);
+  assert.equal(issue?.details?.requiredAssignments, 24);
+  assert.equal(issue?.details?.maximumAssignments, 22);
+  assert.equal(issue?.details?.deficit, 2);
+  assert.equal(issue?.details?.configGuid, 'config');
+
+  const boundary = {
+    guardContinuations: [1, 2, 3].map(index => ({
+      employeeGuid: `E${index}`, guardDate: '2026-11-29', continuationDate: '2026-11-30',
+      continuationTemplate: guard.continuationTemplate!, creditedMinutes: 480,
+    })),
+  };
+  const withContinuations = validatePlanningPreflight({ ...input, boundaryState: boundary });
+  assert.equal(withContinuations.issues.find(entry => entry.code === 'PREFLIGHT_WEEKLY_WORK_CAPACITY_INSUFFICIENT')
+    ?.details?.maximumAssignments, 23);
+  assert.equal(validatePlanningPreflight({ ...input, boundaryState: undefined }).valid, false);
+
+  const corrected = requirements.map(requirement =>
+    requirement.template.guid === early.guid && ['Fri', 'Sat', 'Sun'].includes(requirement.dayOfWeek)
+      ? { ...requirement, maxEmployees: 3 }
+      : requirement);
+  assert.equal(validatePlanningPreflight({ ...input, requirements: corrected }).valid, true);
+  assert.equal(validatePlanningPreflight({ ...input, employees: input.employees.filter(person => person.guid !== 'E10') }).valid, true);
+  assert.equal(validatePlanningPreflight({ ...input, fixedAlternationPolicy: undefined }).valid, true);
+  assert.equal(validatePlanningPreflight({ ...input, config: { ...settings, weeklyLeavePolicy: {
+    ...settings.weeklyLeavePolicy, requireWorkOnOtherDays: false,
+  } } }).valid, true);
+
+  const limitedOnMonday = validatePlanningPreflight({ ...input, lockedAssignments: [{
+    employeeGuid: 'E11', date: '2026-11-30', templateGuid: limited.guid,
+  }] });
+  assert.ok(limitedOnMonday.issues.some(entry => entry.code === 'PREFLIGHT_DAILY_WORK_CAPACITY_INSUFFICIENT' ||
+    entry.code === 'PREFLIGHT_WEEKLY_WORK_CAPACITY_INSUFFICIENT'));
+
+  // Ordinary direct locks waive work on that date, regardless of pool selection.
+  const withLocks = validatePlanningPreflight({ ...input, boundaryState: boundary,
+    lockedAssignments: [{ employeeGuid: 'E4', date: '2026-12-04', templateGuid: null }] });
+  assert.equal(withLocks.valid, true);
+}

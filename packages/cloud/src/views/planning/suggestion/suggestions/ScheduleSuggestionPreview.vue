@@ -14,13 +14,15 @@
           <IconEdit :size="15" /> Modifier en groupe
         </button>
         <button class="secondary-button" :disabled="loading || actionLoading || serviceSavePending" @click="confirmAction = 'regenerate'">
-          <IconRefresh :size="15" /> Régénérer autour des décisions
+          <IconRefresh :size="15" /> {{ preflightDiagnostic ? 'Relancer la régénération' : 'Régénérer autour des décisions' }}
         </button>
         <button class="secondary-button" :disabled="loading || actionLoading || serviceSavePending" @click="confirmAction = 'reject'">Rejeter</button>
         <button class="primary-button" :disabled="loading || actionLoading || serviceSavePending" @click="openPublication">Vérifier et publier</button>
       </div>
     </header>
 
+    <SuggestionPreflightAlert v-if="preflightDiagnostic" :diagnostic="preflightDiagnostic"
+        :config-guid="suggestion?.configuration?.guid" />
     <p v-if="errorMessage" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{{ errorMessage }}</p>
     <p v-if="loading && !suggestion" role="status" class="p-4 text-sm text-slate-600">Chargement du planning…</p>
 
@@ -378,6 +380,8 @@ import PlanningDrawer from '../components/PlanningDrawer.vue'
 import SuggestionBulkEditor from './SuggestionBulkEditor.vue'
 import SuggestionFilters from './SuggestionFilters.vue'
 import SuggestionCellEditor from './SuggestionCellEditor.vue'
+import SuggestionPreflightAlert from './SuggestionPreflightAlert.vue'
+import { readPreflightDiagnostic, type PreflightDiagnostic } from './preflightDiagnostics'
 import { canMoveService, serviceAbsence } from './suggestionServiceCells'
 import { employeeAcronyms, suggestionWeeks } from './suggestionWeek'
 import { planningAlerts, planningAlertSummary, type AlertTarget } from './suggestionAlerts'
@@ -403,6 +407,7 @@ const router = useRouter()
 
 const loading = ref(false)
 const errorMessage = ref('')
+const preflightDiagnostic = ref<PreflightDiagnostic | null>(null)
 const suggestion = ref<ScheduleSuggestion | null>(null)
 const templates = ref<PlanningTemplateMini[]>([])
 const viewMode = ref<'employees' | 'services'>('employees')
@@ -1060,19 +1065,22 @@ function closeCellAndReturn(): void {
 }
 
 async function confirmPublication(): Promise<void> {
-  const guid = suggestion.value?.guid
+  const current = suggestion.value
   const date = approvalPreview.value?.effective_from
-  if (!canConfirmPublication.value || !guid || !date) return
+  if (!canConfirmPublication.value || !current || !date) return
   actionLoading.value = true
   publicationError.value = ''
   try {
     const token = approvalPreview.value?.confirmation_token
-    const response = await ScheduleSuggestionService.approve(guid, date, token ? {
+    const response = await ScheduleSuggestionService.approve(current.guid, date, token ? {
       token, reason: publicationReason.value.trim() || undefined,
     } : undefined)
     if (!response.success) throw response
     closePublication()
-    await router.push({ name: 'schedule-assignment' })
+    await router.push({
+      name: 'schedule-assignment',
+      query: { date_from: current.period_from, date_to: current.period_to },
+    })
   } catch (error) {
     const message = responseError(error, 'Impossible de publier la suggestion.')
     effectiveDate.value = date
@@ -1088,6 +1096,8 @@ async function resolveAction(): Promise<void> {
 
   const action = confirmAction.value
   actionLoading.value = true
+  preflightDiagnostic.value = null
+  errorMessage.value = ''
 
   try {
     const response = action === 'regenerate'
@@ -1106,6 +1116,11 @@ async function resolveAction(): Promise<void> {
     await router.push({ name: 'planning-suggestion-list' })
   } catch (error: any) {
     if (action === 'regenerate') {
+      preflightDiagnostic.value = readPreflightDiagnostic(error)
+      if (preflightDiagnostic.value) {
+        confirmAction.value = null
+        return
+      }
       const details =
           error?.details ??
           error?.error?.details ??

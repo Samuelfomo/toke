@@ -2,7 +2,7 @@
   <div class="memo-chat-container">
     <!-- En-tête -->
     <div class="chat-header">
-      <button @click="$emit('back')" class="btn-retour">
+      <button type="button" aria-label="Retour à la liste" @click="$emit('back')" class="btn-retour">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="back-icon">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
@@ -46,6 +46,7 @@
     <div class="chat-content-wrapper">
       <!-- Zone de messages -->
       <div class="messages-area" ref="messagesContainer">
+        <slot name="memo-details"></slot>
         <!-- Loading -->
         <div v-if="loading" class="loading-message">
           <div class="spinner"></div>
@@ -228,7 +229,7 @@
 
       <!-- Zone de saisie principale -->
       <div class="input-area">
-        <div class="input-actions-left">
+        <div v-if="allowAttachments" class="input-actions-left">
           <!-- Bouton pièce jointe -->
           <button
               @click="$emit('trigger-file-input')"
@@ -291,7 +292,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, useSlots } from 'vue';
+
+const slots = useSlots();
 
 // Types
 interface Message {
@@ -349,6 +352,7 @@ const props = withDefaults(defineProps<{
 
   // Input
   showInput?: boolean;
+  allowAttachments?: boolean;
   inputText?: string;
   inputPlaceholder?: string;
   inputDisabled?: boolean;
@@ -375,6 +379,7 @@ const props = withDefaults(defineProps<{
   recordedDuration: '00:00',
   previewCurrentTime: '0:00',
   showInput: true,
+  allowAttachments: true,
   showHeaderAction: true,
   showAudioDownload: false,
 });
@@ -498,7 +503,8 @@ const getWaveformHeight = (index: number): string => {
 };
 
 // Scroll to bottom when messages change
-watch(() => props.messages.length, () => {
+watch(() => props.messages.length, (_, previousLength) => {
+  if (!previousLength && slots['memo-details']) return;
   nextTick(() => {
     if (messagesContainer.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
@@ -532,7 +538,8 @@ defineExpose({
 .memo-chat-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   background: linear-gradient(135deg, #e8eef3 0%, #f5f7fa 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
